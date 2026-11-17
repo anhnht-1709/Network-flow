@@ -65,9 +65,16 @@ AI_NHOM8/
 
 ## ⚙️ 4. Hướng dẫn thiết lập môi trường (Setup)
 
+> **Kho lưu trữ chính thức:** [https://github.com/anhnht-1709/Network-flow](https://github.com/anhnht-1709/Network-flow)  
 > **Yêu cầu:** Máy tính đã cài đặt **Python 3.10+** (khuyến nghị Python 3.11 – 3.14).
 
-### 4.1. Tạo môi trường ảo (Virtual Environment)
+### 4.1. Clone mã nguồn về máy
+```bash
+git clone https://github.com/anhnht-1709/Network-flow.git
+cd Network-flow
+```
+
+### 4.2. Tạo môi trường ảo (Virtual Environment)
 
 - **Trên Windows (PowerShell):**
   ```powershell
@@ -90,7 +97,7 @@ AI_NHOM8/
   pip install -r requirements.txt
   ```
 
-### 4.2. Chạy kiểm tra bộ khung mẫu
+### 4.3. Chạy kiểm tra bộ khung mẫu
 Sau khi kích hoạt môi trường ảo, chạy thử lệnh:
 ```bash
 python main.py
