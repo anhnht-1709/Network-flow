@@ -1,7 +1,6 @@
 # 🌊 ỨNG DỤNG THUẬT TOÁN GA VÀ WOA CHO BÀI TOÁN NETWORK FLOW
 > **Đồ án cuối kỳ môn Trí tuệ nhân tạo — Nhóm 8**  
 > **Giảng viên hướng dẫn:** Bộ môn Trí tuệ nhân tạo  
-> **Thời hạn hoàn thành:** 20/12/2026 (Bản hoàn chỉnh chốt ngày 17/12/2026)
 
 ---
 
