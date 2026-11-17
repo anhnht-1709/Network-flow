@@ -107,9 +107,9 @@ Nếu màn hình xuất hiện thông báo `TẤT CẢ CÁC BÀI TEST ĐỀU Đ�
 
 ---
 
-## 🚀 5. Quy trình làm việc với Git & GitHub dành cho thành viên
+## 5. Quy trình làm việc với Git & GitHub dành cho thành viên
 
-> ⚠️ **NGUYÊN TẮC VÀNG:**  
+> ⚠️ **NGUYÊN TẮC**  
 > 1. **TUYỆT ĐỐI KHÔNG commit trực tiếp lên nhánh `main`**.  
 > 2. Mỗi thành viên chỉ làm việc trên nhánh riêng của mình (`tv2`, `tv3`, `tv4`, `tv5`).  
 > 3. Chỉ sửa đúng các hàm/file được phân công, không sửa file của thành viên khác.
@@ -158,7 +158,7 @@ git push -u origin tvX
 
 ---
 
-## 🛠️ 6. Quy ước lập trình cho TV2 (GA) và TV5 (WOA)
+## 6. Quy ước lập trình cho TV2 (GA) và TV5 (WOA)
 
 Các thuật toán `core/ga.py` và `core/woa.py` đều kế thừa `SolverBase` và tuân thủ các quy tắc cốt lõi:
 1. **Không gian nghiệm:** Nghiệm $x$ là vector lượng luồng trên các đường đi đơn có độ dài `self.dim`. Miền giá trị cá thể nằm trong `[self.lower, self.upper]`.
@@ -181,7 +181,7 @@ Các thuật toán `core/ga.py` và `core/woa.py` đều kế thừa `SolverBase
 
 ---
 
-## 🆘 7. Lệnh cứu nguy khi thao tác Git
+## 7. Lệnh cứu nguy khi thao tác Git
 
 - **Lỡ sửa nhầm file ngoài phân công:**
   ```bash
