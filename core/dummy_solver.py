@@ -40,6 +40,7 @@ class RandomSolver(SolverBase):
         start_time = time.perf_counter()
         self.eval_count = 0
         self.history = []
+        self.history_flows = []
 
         # =========================================================================
         # CÁC DÒNG GA VÀ WOA SẼ CẦN DÙNG TƯƠNG TỰ:
@@ -55,6 +56,7 @@ class RandomSolver(SolverBase):
         best_x = np.zeros(dim, dtype=np.float64)
         best_eval, best_flows = self.evaluate_candidate(best_x)
         self.history.append(best_eval.fitness)
+        self.history_flows.append(best_flows.copy())
 
         # 2. Vòng lặp tìm kiếm
         for _ in range(max_iter):
@@ -83,14 +85,15 @@ class RandomSolver(SolverBase):
                 # =====================================================================
                 ev, flows = self.evaluate_candidate(candidate_x)
 
-                # Solver luôn TỐI ĐA HÓA fitness
-                if ev.fitness > best_eval.fitness:
+                # Ưu tiên nghiệm hợp lệ (feasible) trước, sau đó tối đa hóa fitness
+                if self.is_better(ev, best_eval):
                     best_eval = ev
                     best_flows = flows
                     best_x = candidate_x.copy()
 
-            # Lưu lại fitness tốt nhất ở cuối vòng lặp (cho đường hội tụ)
+            # Lưu lại fitness và luồng tốt nhất ở cuối vòng lặp
             self.history.append(best_eval.fitness)
+            self.history_flows.append(best_flows.copy())
 
         elapsed_s = time.perf_counter() - start_time
 
@@ -103,5 +106,6 @@ class RandomSolver(SolverBase):
             mode=self.mode,
             params=self.params,
             algorithm_name="RandomSearch (Dummy)",
-            best_x=best_x
+            best_x=best_x,
+            history_flows=self.history_flows
         )

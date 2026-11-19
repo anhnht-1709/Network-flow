@@ -9,7 +9,9 @@ Phụ trách: Thành viên 1 (Nhóm trưởng)
 """
 
 from __future__ import annotations
+from collections import deque
 from dataclasses import dataclass
+from typing import Any
 import numpy as np
 from core.graph import Graph
 
@@ -41,7 +43,7 @@ def evaluate(
     flows: np.ndarray,
     graph: Graph,
     mode: str = "max_flow",
-    penalty: float = 1000.0,
+    penalty: float | None = None,
     tol: float = 1e-4
 ) -> Evaluation:
     """
@@ -55,8 +57,8 @@ def evaluate(
         Đồ thị bài toán mạng luồng.
     mode: str
         'max_flow' hoặc 'min_cost'.
-    penalty: float
-        Hệ số phạt cho mỗi đơn vị vi phạm ràng buộc (mặc định 1000.0).
+    penalty: float | None
+        Hệ số phạt cho mỗi đơn vị vi phạm ràng buộc. Nếu để None, tự động tính theo tổng chi phí mạng.
     tol: float
         Ngưỡng dung sai xác định tính khả thi (feasible).
 
@@ -70,6 +72,10 @@ def evaluate(
         raise ValueError(
             f"Kích thước vector flows ({flows.shape[0]}) không khớp với số cạnh của đồ thị ({graph.num_edges})."
         )
+
+    if penalty is None:
+        max_network_cost = float(np.sum(graph.capacities * graph.costs))
+        penalty = max(1000.0, max_network_cost * 10.0)
 
     # 1. Kiểm tra vi phạm sức chứa cạnh: 0 <= flows[e] <= capacity[e]
     under_flow = np.maximum(0.0, -flows)
@@ -153,3 +159,110 @@ def is_feasible(
     """Kiểm tra nhanh xem vector nghiệm flows có hợp lệ hay không."""
     ev = evaluate(flows, graph, mode=mode, tol=tol)
     return ev.feasible
+
+
+def is_better(candidate: Evaluation, current_best: Evaluation | None) -> bool:
+    """
+    So sánh hai kết quả đánh giá: ưu tiên nghiệm hợp lệ (feasible=True) trước,
+    nếu cùng trạng thái hợp lệ thì chọn nghiệm có fitness lớn hơn.
+    """
+    if current_best is None:
+        return True
+    if candidate.feasible and not current_best.feasible:
+        return True
+    if not candidate.feasible and current_best.feasible:
+        return False
+    return candidate.fitness > current_best.fitness
+
+
+def cut_proof(
+    graph: Graph,
+    required_flow: float | None = None,
+    tol: float = 1e-4
+) -> dict[str, Any] | None:
+    """
+    Tìm lát cắt s-t có sức chứa nhỏ nhất để kiểm chứng tính vô nghiệm khi
+    lượng luồng yêu cầu (required_flow) vượt quá sức chứa tối đa của mạng.
+
+    Returns:
+    --------
+    dict | None:
+        Trả về thông tin lát cắt chứng minh vô nghiệm nếu required_flow > cut_capacity + tol,
+        ngược lại trả về None.
+    """
+    req = graph.required_flow if required_flow is None else required_flow
+    if req is None or req <= 0.0:
+        return None
+
+    n = graph.num_nodes
+    s = graph.source_idx
+    t = graph.sink_idx
+    node_idx = {name: idx for idx, name in enumerate(graph.nodes)}
+
+    # Xây dựng mạng dư (residual capacity matrix) để tìm lát cắt cực tiểu bằng BFS
+    residual = np.zeros((n, n), dtype=np.float64)
+    for edge in graph.edges:
+        if edge.capacity > 0:
+            u = node_idx[edge.u]
+            v = node_idx[edge.v]
+            residual[u, v] += edge.capacity
+
+    while True:
+        parent = [-1] * n
+        parent[s] = s
+        queue: deque[int] = deque([s])
+        while queue and parent[t] == -1:
+            u = queue.popleft()
+            for v in range(n):
+                if parent[v] == -1 and residual[u, v] > 1e-12:
+                    parent[v] = u
+                    queue.append(v)
+
+        if parent[t] == -1:
+            break
+
+        bottleneck = float("inf")
+        v = t
+        while v != s:
+            u = parent[v]
+            bottleneck = min(bottleneck, float(residual[u, v]))
+            v = u
+
+        v = t
+        while v != s:
+            u = parent[v]
+            residual[u, v] -= bottleneck
+            residual[v, u] += bottleneck
+            v = u
+
+    # Tập đỉnh S đến được từ s trên mạng dư cuối cùng xác định lát cắt cực tiểu (S, V \ S)
+    visited = {s}
+    queue = deque([s])
+    while queue:
+        u = queue.popleft()
+        for v in range(n):
+            if v not in visited and residual[u, v] > 1e-12:
+                visited.add(v)
+                queue.append(v)
+
+    source_side = {graph.nodes[i] for i in visited}
+    cut_edges = [
+        f"{e.u}->{e.v}"
+        for e in graph.edges
+        if e.u in source_side and e.v not in source_side
+    ]
+    cut_capacity = float(sum(
+        e.capacity
+        for e in graph.edges
+        if e.u in source_side and e.v not in source_side
+    ))
+
+    if req > cut_capacity + tol:
+        return {
+            "required_flow": float(req),
+            "cut_capacity": cut_capacity,
+            "shortfall": float(req - cut_capacity),
+            "source_side": [node for node in graph.nodes if node in source_side],
+            "cut_edges": cut_edges
+        }
+    return None

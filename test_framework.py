@@ -14,7 +14,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent))
 
 from core.graph import Graph, Edge
-from core.fitness import evaluate, is_feasible
+from core.fitness import Evaluation, evaluate, is_feasible, is_better, cut_proof
 from core.paths import enumerate_paths, PathEncoding
 from core.dummy_solver import RandomSolver
 
@@ -189,6 +189,37 @@ def test_other_core_checks():
     print("  -> ĐẠT: Các kiểm thử bổ trợ đều thành công.")
 
 
+def test_shared_population_and_cut_proof():
+    """Kiểm tra khởi tạo quần thể dùng chung, is_better, history_flows và cut_proof."""
+    print("--- [Test 6] Quần thể dùng chung, is_better, history_flows và cut_proof ---")
+    graph = Graph.from_json("data/scenarios/s1_small.json")
+
+    s1 = RandomSolver(graph, mode="min_cost", seed=123)
+    s2 = RandomSolver(graph, mode="min_cost", seed=123)
+    pop1 = s1.generate_initial_population(10)
+    pop2 = s2.generate_initial_population(10)
+    assert pop1.shape == (10, s1.dim)
+    assert np.allclose(pop1, pop2), "Hai solver cùng seed phải tạo cùng quần thể ban đầu."
+
+    # Kiểm tra is_better ưu tiên feasible=True kể cả khi fitness thấp hơn
+    infeasible_high = Evaluation(fitness=-10.0, total_flow=7.0, total_cost=10.0, violation=1.0, feasible=False)
+    feasible_low = Evaluation(fitness=-500.0, total_flow=8.0, total_cost=500.0, violation=0.0, feasible=True)
+    assert is_better(feasible_low, infeasible_high) is True
+    assert is_better(infeasible_high, feasible_low) is False
+
+    # Kiểm tra history_flows trong Result
+    res = s1.run(max_iter=5)
+    assert len(res.history_flows) == len(res.history)
+
+    # Kiểm tra cut_proof: S1 có max_flow = 13 -> required_flow = 8 trả None, required_flow = 15 trả chứng cứ lát cắt
+    assert cut_proof(graph, required_flow=8.0) is None
+    proof = cut_proof(graph, required_flow=15.0)
+    assert proof is not None
+    assert abs(proof["cut_capacity"] - 13.0) < 1e-6
+    assert abs(proof["shortfall"] - 2.0) < 1e-6
+    print(f"  -> ĐẠT: Quần thể chung khớp 100%, is_better ưu tiên feasible, cut_proof={proof['cut_edges']} (cap={proof['cut_capacity']}).")
+
+
 if __name__ == "__main__":
     print("=" * 65)
     print("  CHẠY BỘ KIỂM THỬ TÍCH HỢP PATH-ENCODING")
@@ -199,6 +230,7 @@ if __name__ == "__main__":
     test_4d_no_warning_when_exact_max_paths()
     test_5_random_solver_s1_min_cost_notopup()
     test_other_core_checks()
+    test_shared_population_and_cut_proof()
     print("\n" + "=" * 65)
     print("  TẤT CẢ CÁC BÀI TEST ĐỀU ĐẠT THÀNH CÔNG 100%!")
     print("=" * 65)

@@ -54,11 +54,11 @@ AI_NHOM8/
 
 | Thành viên | Vai trò | Module phụ trách chính | Mốc hạn hoàn thành |
 |---|---|---|---|
-| **TV1 (Nhóm trưởng)** | Kiến trúc & Tích hợp | `graph.py`, `fitness.py`, `paths.py`, `solver_base.py`, merge code, ghép báo cáo | **17/11 (Xong khung chung)** · 08/12 (Merge) · 17/12 (Báo cáo cuối) |
-| **TV2** | Thuật toán GA | `core/ga.py`: Triển khai đầy đủ các toán tử GA theo đường đi | 29/11 (Bản chạy được) · **05/12 (Bản cuối)** · 10/12 (Báo cáo GA) |
-| **TV3** | Dữ liệu & Thực nghiệm | `data/scenarios/`, `experiments/benchmark.py`, chạy Turnitin | 29/11 (Bộ kịch bản) · **13/12 (Thực nghiệm xong)** · 17/12 (Turnitin < 30%) |
-| **TV4** | Giao diện người dùng | `gui/app.py`: Dựng form PySide6, vẽ đồ thị luồng và đường hội tụ | 05/12 (Khung form) · **11/12 (GUI hoàn chỉnh)** · 15/12 (Báo cáo GUI) |
-| **TV5** | Thuật toán WOA & Demo | `core/woa.py`, Slide thuyết trình và kịch bản demo | 29/11 (Bản chạy được) · **05/12 (Bản cuối)** · 17/12 (Slide & Video demo) |
+| **TV1 (Nhóm trưởng)** | Kiến trúc & Tích hợp | `graph.py`, `fitness.py`, `paths.py`, `solver_base.py`, `cut_proof`, merge code, ghép báo cáo | **23/11 (Xong khung chung)** · 08/12 (Merge) · 17/12 (Báo cáo cuối) |
+| **TV2** | Thuật toán GA | `core/ga.py`: Triển khai đầy đủ các toán tử GA theo đường đi | 28/11 (Chạy được trên S1) · **01/12 (Bản cuối)** · 10/12 (Báo cáo GA) |
+| **TV3** | Dữ liệu & Thực nghiệm | `data/scenarios/`, `experiments/benchmark.py`, chạy Turnitin | **27/11 (Bộ kịch bản)** · 03/12 (Khung benchmark) · 13/12 (Thực nghiệm xong) · 17/12 (Turnitin < 30%) |
+| **TV4** | Giao diện người dùng | `gui/app.py`: Dựng form PySide6, vẽ đồ thị luồng, đường hội tụ & thanh tua lại | 02/12 (Form nạp kịch bản) · 05/12 (Nối thử GA/WOA) · **11/12 (GUI hoàn chỉnh)** · 15/12 (Báo cáo GUI) |
+| **TV5** | Thuật toán WOA & Demo | `core/woa.py`, Slide thuyết trình, kịch bản demo & bảng vấn đáp | **29/11 (WOA bản cuối)** · 10/12 (Báo cáo WOA) · 17/12 (Slide & Demo) |
 
 ---
 
@@ -160,7 +160,7 @@ git push -u origin tvX
 ## 6. Quy ước lập trình cho TV2 (GA) và TV5 (WOA)
 
 Các thuật toán `core/ga.py` và `core/woa.py` đều kế thừa `SolverBase` và tuân thủ các quy tắc cốt lõi:
-1. **Không gian nghiệm:** Nghiệm $x$ là vector lượng luồng trên các đường đi đơn có độ dài `self.dim`. Miền giá trị cá thể nằm trong `[self.lower, self.upper]`.
+1. **Không gian nghiệm & Khởi tạo:** Nghiệm $x$ là vector lượng luồng trên các đường đi đơn có độ dài `self.dim`. Miền giá trị cá thể nằm trong `[self.lower, self.upper]`. Khởi tạo quần thể ban đầu bằng `self.generate_initial_population(pop_size)`.
 2. **Kẹp biên nghiệm:** Sau khi lai ghép, đột biến hoặc bơi theo xoắn ốc, luôn kẹp nghiệm về biên:
    ```python
    candidate_x = self.encoding.clip(candidate_x)
@@ -170,7 +170,7 @@ Các thuật toán `core/ga.py` và `core/woa.py` đều kế thừa `SolverBase
    ev, flows = self.evaluate_candidate(candidate_x)
    ```
    *(Hàm tự động decode $x \to flows$ với `topup=False`, chấm điểm và tăng bộ đếm đánh giá).*
-4. **Mục tiêu tối ưu:** Thuật toán luôn **TỐI ĐA HÓA fitness** (cập nhật nghiệm tốt nhất khi `ev.fitness > best_eval.fitness`).
+4. **Mục tiêu tối ưu & Lưu lịch sử:** Ưu tiên nghiệm hợp lệ (`feasible=True`) trước, sau đó tối đa hóa `fitness` qua `self.is_better(ev, best_eval)`. Lưu `self.history_flows.append(best_flows.copy())` ở cuối mỗi vòng lặp.
 5. **Dừng theo ngân sách:** Luôn kiểm tra điều kiện dừng:
    ```python
    if self.budget_exhausted(max_evals):

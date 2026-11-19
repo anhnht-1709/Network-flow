@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 
 from core.graph import Graph
-from core.fitness import Evaluation, evaluate
+from core.fitness import Evaluation, evaluate, is_better
 from core.paths import PathEncoding
 
 
@@ -28,6 +28,7 @@ class Result:
     params: dict[str, Any] = field(default_factory=dict)
     algorithm_name: str = "Solver"
     best_x: np.ndarray | None = None
+    history_flows: list[np.ndarray] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Chuyển kết quả thành dictionary để tiện lưu trữ JSON hoặc xuất biểu đồ."""
@@ -44,6 +45,7 @@ class Result:
             "best_flows": self.best_flows.tolist(),
             "best_x": self.best_x.tolist() if self.best_x is not None else None,
             "history_length": len(self.history),
+            "history_flows_length": len(self.history_flows),
             "params": self.params
         }
 
@@ -75,6 +77,7 @@ class SolverBase(ABC):
 
         self.eval_count = 0
         self.history: list[float] = []
+        self.history_flows: list[np.ndarray] = []
 
         # Tích hợp mã hóa nghiệm theo đường đi (Path-based encoding)
         self.encoding = PathEncoding(graph, max_paths=self.params.get("max_paths", 200))
@@ -82,13 +85,25 @@ class SolverBase(ABC):
         self.lower = self.encoding.lower
         self.upper = self.encoding.upper
 
+    def generate_initial_population(self, pop_size: int) -> np.ndarray:
+        """
+        Khởi tạo quần thể ban đầu kích thước (pop_size, self.dim) trong miền [self.lower, self.upper]
+        từ hạt giống self.seed để các thuật toán xuất phát từ cùng một tập ứng viên.
+        """
+        init_rng = np.random.default_rng(self.seed)
+        return init_rng.uniform(self.lower, self.upper, size=(pop_size, self.dim))
+
+    def is_better(self, candidate: Evaluation, current_best: Evaluation | None) -> bool:
+        """Kiểm tra ứng viên mới có tốt hơn nghiệm tốt nhất hiện tại hay không (ưu tiên feasible)."""
+        return is_better(candidate, current_best)
+
     def _evaluate(self, flows: np.ndarray) -> Evaluation:
         """
         MỌI solver BẮT BUỘC phải gọi hàm đánh giá qua phương thức này.
         Phương thức tự động tăng bộ đếm eval_count để đảm bảo so sánh công bằng.
         """
         self.eval_count += 1
-        penalty = self.params.get("penalty", 1000.0)
+        penalty = self.params.get("penalty", None)
         return evaluate(flows, self.graph, mode=self.mode, penalty=penalty)
 
     def evaluate_candidate(self, x: np.ndarray | list[float]) -> tuple[Evaluation, np.ndarray]:
