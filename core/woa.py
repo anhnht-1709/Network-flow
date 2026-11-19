@@ -171,11 +171,11 @@ class WOASolver(SolverBase):
             elapsed_s=elapsed_s,
             mode=self.mode,
             params={
+                **self.params,
                 "num_whales": self.num_whales,
                 "pop_size": self.num_whales,
                 "b": self.b,
                 "details": details,
-                **self.params,
             },
             algorithm_name="WOA",
             best_x=best_x,
