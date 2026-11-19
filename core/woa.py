@@ -1,7 +1,7 @@
 """
 core/woa.py
 Cài đặt Thuật toán Tối ưu hóa Bầy Cá Voi (Whale Optimization Algorithm - WOA) giải bài toán Network Flow.
-Phụ trách: Thành viên 5 (TV5)
+Phụ trách: Thành viên 5 (TV5) - Minh Nhân
 Deadline mốc giữa: 29/11 | Bản cuối: 05/12
 
 Quy tắc bắt buộc:
@@ -9,8 +9,9 @@ Quy tắc bắt buộc:
   2. Làm việc trên không gian nghiệm vector x kích thước self.dim trong khoảng [self.lower, self.upper].
   3. Kẹp nghiệm hợp lệ: candidate_x = self.encoding.clip(candidate_x) sau mỗi bước di chuyển.
   4. Đánh giá cá thể BẮT BUỘC gọi duy nhất: ev, flows = self.evaluate_candidate(x).
-  5. Luôn TỐI ĐA HÓA fitness: cập nhật khi ev.fitness > best_eval.fitness.
+  5. Luôn TỐI ĐA HÓA fitness & ưu tiên khả thi: self.is_better(ev, best_eval).
   6. Dừng theo ngân sách: if self.budget_exhausted(max_evals): break.
+  7. Lưu history_flows song song với history để phục vụ thanh tua Replay trên giao diện GUI.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from typing import Any
 import numpy as np
 
 from core.graph import Graph
+from core.fitness import Evaluation
 from core.solver_base import SolverBase, Result
 
 
@@ -35,21 +37,21 @@ class WOASolver(SolverBase):
         seed: int = 42
     ):
         super().__init__(graph, mode=mode, params=params, seed=seed)
-        # Các tham số mặc định của WOA
-        self.num_whales = self.params.get("num_whales", 30)
+        # Hỗ trợ cả 2 tên tham số: num_whales (đặc thù WOA) và pop_size (dùng chung cho form GUI & GA)
+        self.num_whales = self.params.get("num_whales", self.params.get("pop_size", 30))
         self.b = self.params.get("b", 1.0)  # Hằng số định hình đường xoắn ốc logarithmic
 
     def initialize_whales(self) -> np.ndarray:
         """
         Khởi tạo vị trí ban đầu của đàn cá voi trong khoảng [self.lower, self.upper].
+        Đổi sang gọi hàm chung generate_initial_population của SolverBase để GA và WOA xuất phát cùng 1 quần thể khi cùng seed.
 
         Returns:
         --------
         np.ndarray:
             Ma trận vị trí bầy cá voi kích thước (num_whales, self.dim).
         """
-        # TODO (TV5): Khởi tạo ngẫu nhiên vị trí các cá voi bằng self.rng
-        raise NotImplementedError("TODO: Phụ trách bởi Thành viên 5 (TV5) - initialize_whales")
+        return self.generate_initial_population(self.num_whales)
 
     def run(self, max_iter: int, max_evals: int | None = None) -> Result:
         """
@@ -58,25 +60,124 @@ class WOASolver(SolverBase):
         start_time = time.perf_counter()
         self.eval_count = 0
         self.history = []
+        self.history_flows = []
 
-        # TODO (TV5): Hoàn thiện vòng lặp chính của WOA theo khung sau:
-        # 1. Khởi tạo vị trí đàn cá voi
-        # 2. Đánh giá đàn cá voi bằng self.evaluate_candidate(whale_i)
-        # 3. Xác định con mồi tốt nhất (best_whale / best_x)
-        # 4. Lặp qua từng vòng lặp t in range(max_iter):
-        #    - Kiểm tra self.budget_exhausted(max_evals) -> break
-        #    - Giảm dần hệ số a từ 2 về 0: a = 2.0 - 2.0 * (t / max_iter)
-        #    - Với mỗi cá voi i:
-        #      + Tính vector A = 2 * a * r - a, C = 2 * r (r là số ngẫu nhiên trong [0, 1])
-        #      + Sinh số ngẫu nhiên p trong [0, 1]
-        #      + Nếu p < 0.5:
-        #        * Nếu |A| < 1: Bao vây con mồi (Shrinking encircling) quanh best_whale
-        #        * Nếu |A| >= 1: Tìm kiếm ngẫu nhiên (Exploration) quanh cá voi ngẫu nhiên (rand_whale)
-        #      + Nếu p >= 0.5:
-        #        * Bơi theo đường xoắn ốc bong bóng (Spiral bubble-net attacking)
-        #      + Kẹp biên vị trí mới: whale_i = self.encoding.clip(whale_i)
-        #      + Đánh giá cá thể: ev, flows = self.evaluate_candidate(whale_i)
-        #      + Cập nhật con mồi tốt nhất nếu ev.fitness > best_eval.fitness
-        #    - self.history.append(best_eval.fitness)
-        # 5. Trả về Result(...)
-        raise NotImplementedError("TODO: Phụ trách bởi Thành viên 5 (TV5) - run")
+        # Khởi tạo bộ đếm số lần dùng 3 nhánh và kẹp biên
+        details = {"encircle": 0, "explore": 0, "spiral": 0, "clipped": 0}
+
+        dim = self.dim
+        num_whales = self.num_whales
+
+        # 1. Khởi tạo vị trí đàn cá voi từ quần thể ban đầu chung
+        whales = self.initialize_whales()
+
+        best_x: np.ndarray | None = None
+        best_eval = None
+        best_flows: np.ndarray | None = None
+
+        # 2. Đánh giá bầy ban đầu để tìm con mồi tốt nhất (Leader / Best Whale)
+        for i in range(num_whales):
+            if self.budget_exhausted(max_evals):
+                break
+            ev, flows = self.evaluate_candidate(whales[i])
+            if self.is_better(ev, best_eval):
+                best_eval = ev
+                best_flows = flows
+                best_x = whales[i].copy()
+
+        # Trường hợp hết ngân sách ngay từ đầu (ví dụ max_evals <= 0):
+        # KHÔNG gọi evaluate_candidate để tránh vi phạm trần ngân sách 0 lần.
+        if best_eval is None:
+            best_x = np.zeros(dim, dtype=np.float64)
+            best_flows = np.zeros(self.graph.num_edges, dtype=np.float64)
+            best_eval = Evaluation(
+                fitness=-float("inf"),
+                total_flow=0.0,
+                total_cost=0.0,
+                violation=0.0,
+                feasible=False
+            )
+
+        self.history.append(best_eval.fitness)
+        self.history_flows.append(best_flows.copy())
+
+        # 3. Vòng lặp tối ưu hóa chính
+        for t in range(max_iter):
+            if self.budget_exhausted(max_evals):
+                break
+
+            # Lịch giảm hệ số a về đúng 0.0 ở vòng cuối: t = max_iter - 1
+            a = 2.0 * (1.0 - t / max(1, max_iter - 1))
+
+            for i in range(num_whales):
+                if self.budget_exhausted(max_evals):
+                    break
+
+                # Sinh các hệ số ngẫu nhiên cho cá voi i
+                r1 = self.rng.random()
+                r2 = self.rng.random()
+                A = 2.0 * a * r1 - a
+                C = 2.0 * r2
+                p = self.rng.random()
+
+                if p < 0.5:
+                    if abs(A) < 1.0:
+                        # Nhánh 1: Bao vây con mồi quanh best_whale
+                        details["encircle"] += 1
+                        D = np.abs(C * best_x - whales[i])
+                        new_whale = best_x - A * D
+                    else:
+                        # Nhánh 2: Tìm kiếm ngẫu nhiên quanh rand_whale
+                        details["explore"] += 1
+                        rand_idx = self.rng.integers(0, num_whales)
+                        rand_whale = whales[rand_idx]
+                        D = np.abs(C * rand_whale - whales[i])
+                        new_whale = rand_whale - A * D
+                else:
+                    # Nhánh 3: Bơi xoắn ốc bọt khí quanh best_whale
+                    details["spiral"] += 1
+                    l = self.rng.uniform(-1.0, 1.0)
+                    D_prime = np.abs(best_x - whales[i])
+                    new_whale = best_x + D_prime * np.exp(self.b * l) * np.cos(2.0 * np.pi * l)
+
+                # Trước khi clip, nếu có phần tử vượt biên thì tăng details["clipped"] += 1
+                if np.any((new_whale < self.lower) | (new_whale > self.upper)):
+                    details["clipped"] += 1
+
+                # Kẹp biên vị trí mới về [self.lower, self.upper]
+                new_whale = self.encoding.clip(new_whale)
+
+                # Đánh giá cá thể qua evaluate_candidate (decode -> flows -> evaluate)
+                ev, flows = self.evaluate_candidate(new_whale)
+                whales[i] = new_whale
+
+                # Cập nhật con mồi tốt nhất: ưu tiên feasible và fitness cao hơn
+                if self.is_better(ev, best_eval):
+                    best_eval = ev
+                    best_flows = flows
+                    best_x = new_whale.copy()
+
+            # Cuối mỗi vòng lặp t: lưu fitness và luồng tốt nhất
+            self.history.append(best_eval.fitness)
+            self.history_flows.append(best_flows.copy())
+
+        elapsed_s = time.perf_counter() - start_time
+
+        return Result(
+            best_flows=best_flows,
+            best_eval=best_eval,
+            history=self.history,
+            evaluations=self.eval_count,
+            elapsed_s=elapsed_s,
+            mode=self.mode,
+            params={
+                "num_whales": self.num_whales,
+                "pop_size": self.num_whales,
+                "b": self.b,
+                "details": details,
+                **self.params,
+            },
+            algorithm_name="WOA",
+            best_x=best_x,
+            history_flows=self.history_flows
+        )
