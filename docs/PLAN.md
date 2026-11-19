@@ -36,7 +36,7 @@ Xây dựng một chương trình có giao diện dạng form, giải bài toán
   - `max_flow`: lấy tổng luồng đến nút đích làm mục tiêu, trừ phạt khi vi phạm bảo toàn luồng hoặc sức chứa.
   - `min_cost`: lấy số âm của tổng chi phí làm mục tiêu, trừ phạt khi vi phạm bảo toàn luồng, vượt sức chứa hoặc chưa đạt lượng luồng yêu cầu ($shortfall$).
 
-### 2.2. Mã hóa nghiệm (ĐÃ CẬP NHẬT: Mã hóa theo đường đi - Path-based encoding)
+### 2.2. Mã hóa nghiệm (Mã hóa theo đường đi - Path-based encoding)
 - Một nghiệm là **vector lượng luồng trên các đường đi đơn** từ $source$ đến $sink$:
   $$x = [x_0, x_1, \dots, x_{P-1}]$$
   với $P = num\_paths$ (thu thập bằng thuật toán BFS ngược kết hợp DFS theo độ dài tăng dần trong `core/paths.py`).
@@ -45,26 +45,28 @@ Xây dựng một chương trình có giao diện dạng form, giải bài toán
 - **`topup=False` mặc định:** KHÔNG bật tính năng tự bù luồng tham lam theo chi phí cho GA và WOA, để hai thuật toán tự tối ưu hóa và giải bài toán min cost flow. Nếu tổng luồng chưa đạt $required\_flow$, hàm `evaluate` sẽ phạt phần thiếu ($shortfall$).
 - GA và WOA **dùng chung tuyệt đối** cách mã hóa này để so sánh công bằng.
 
-### 2.3. Giao diện solver chung (ĐÃ CẬP NHẬT: evaluate_candidate & max_evals)
+### 2.3. Giao diện solver chung (`SolverBase`)
 Mọi solver có cùng dạng kế thừa từ `core.solver_base.SolverBase`:
 - **Không gian nghiệm chuẩn:**
   - `self.dim`: số chiều nghiệm = số đường đi ($num\_paths$).
   - `self.lower`: vector cận dưới = toàn 0.
   - `self.upper`: vector cận trên = bottleneck của từng đường đi.
+  - `self.generate_initial_population(pop_size)`: khởi tạo quần thể ban đầu từ `self.seed` để hai thuật toán xuất phát từ cùng một tập ứng viên.
 - **Đánh giá cá thể:**
   - BẮT BUỘC gọi qua `ev, flows = self.evaluate_candidate(x)` (decode $x \to flows$ với `topup=False`, chấm điểm qua `self._evaluate`, tự động đếm đúng 1 lần đánh giá).
-- **Quy ước mục tiêu:** Solver luôn **TỐI ĐA HÓA fitness** (fitness càng lớn nghiệm càng tốt ở cả `max_flow` lẫn `min_cost`).
+- **Quy ước mục tiêu:** Solver ưu tiên nghiệm khả thi (`feasible=True`) trước rồi mới tối đa hóa `fitness` thông qua `self.is_better(ev, best_eval)`. Hệ số phạt được tính tự động lớn hơn tổng chi phí tối đa của mạng.
 - **Giao diện chạy & ngân sách:**
   - `run(max_iter: int, max_evals: int | None = None) -> Result`
   - Cơ chế dừng theo ngân sách: kiểm tra `self.budget_exhausted(max_evals)` ở mỗi vòng lặp để dừng sớm khi chạm trần số lần đánh giá.
 - **Theo dõi tiến trình:**
   - `self.history`: mảng lưu giá trị fitness tốt nhất sau mỗi vòng lặp (dùng vẽ đường hội tụ).
+  - `self.history_flows`: mảng lưu vector luồng tốt nhất sau mỗi vòng lặp (dùng tua lại tiến trình trên giao diện).
   - `self.eval_count`: đếm số lần gọi hàm đánh giá, để so sánh theo cùng ngân sách.
 - **Kết quả trả về `Result`:**
   - `best_flows`: vector luồng trên các cạnh (GUI dùng để vẽ mạng luồng).
   - `best_x`: vector nghiệm tốt nhất theo đường đi.
   - `best_eval`: chi tiết đánh giá (`fitness`, `total_flow`, `total_cost`, `violation`, `feasible`).
-  - `history`, `evaluations`, `elapsed_s`, `params`.
+  - `history`, `history_flows`, `evaluations`, `elapsed_s`, `params`.
 
 ### 2.4. Cấu trúc repo
 ```
@@ -102,11 +104,11 @@ AI_NHOM8/
 
 | TV | Vai trò | Phụ trách chính | Phần báo cáo |
 |---|---|---|---|
-| **TV1** | Nhóm trưởng, mô hình hóa và tích hợp | `graph.py`, `fitness.py`, `paths.py`, `solver_base.py`, `dummy_solver.py`, quản lý repo, merge, ghép báo cáo | Giới thiệu và mô hình bài toán, Kết luận |
-| **TV2** | GA | `ga.py`: mã hóa đường đi, khởi tạo quần thể, chọn lọc, lai ghép, đột biến | Cơ sở lý thuyết và cài đặt GA |
-| **TV3** | Dữ liệu và thực nghiệm | Kịch bản thử nghiệm, `benchmark.py`, bảng và biểu đồ so sánh, chạy Turnitin | Thực nghiệm và so sánh |
-| **TV4** | Giao diện | `gui/app.py`: form nhập mạng, chọn thuật toán, tham số, chạy, vẽ đồ thị luồng và đường hội tụ | Thiết kế chương trình và giao diện |
-| **TV5** | WOA và thuyết trình | `woa.py`: mã hóa đường đi, cá voi bao vây, xoắn ốc bong bóng, tìm ngẫu nhiên; slide và demo | Cơ sở lý thuyết và cài đặt WOA |
+| **TV1** | Nhóm trưởng, mô hình hóa và tích hợp | `graph.py`, `fitness.py`, `paths.py`, `solver_base.py`, `dummy_solver.py`, `cut_proof`, quản lý repo, merge, ghép báo cáo | Chương 1 (Tổng quan), Chương 2.2 (Mã hóa & Hàm chấm), Chương 4 (Kết luận) |
+| **TV2** | GA | `ga.py`: mã hóa đường đi, khởi tạo quần thể chung, chọn lọc tournament 3, lai số học, đột biến đều theo `[lower, upper]`, elitism, bộ đếm toán tử | Chương 2.1 & 2.2 (Cơ sở lý thuyết và cài đặt GA) |
+| **TV3** | Dữ liệu và thực nghiệm | Kịch bản S1–S6 + ca vô nghiệm + ca bẫy tham lam (tính sẵn `known_optimum` bằng Edmonds-Karp / SSP), `benchmark.py`, bảng và biểu đồ so sánh, chạy Turnitin | Chương 3 (Các kết quả thực nghiệm và so sánh) |
+| **TV4** | Giao diện | `gui/app.py`: form PySide6 Widgets, chạy song song GA & WOA, vẽ đồ thị luồng (tô màu cạnh bão hòa/đóng), đường hội tụ, thanh kéo tua lại các vòng, bản dự phòng | Chương 3.1 (Mô tả công cụ & Form PySide6) và Phụ lục (Hướng dẫn sử dụng) |
+| **TV5** | WOA và thuyết trình | `woa.py`: mã hóa đường đi, cá voi bao vây, xoắn ốc bong bóng, tìm ngẫu nhiên, bộ đếm 3 nhánh; slide, kịch bản demo và bộ câu hỏi vấn đáp | Chương 2.1 & 2.2 (Cơ sở lý thuyết và cài đặt WOA) |
 
 ---
 
@@ -115,11 +117,11 @@ AI_NHOM8/
 | Giai đoạn | Thời gian | Mốc cần đạt |
 |---|---|---|
 | **Khởi động** | 17–18/11 | Chốt đề, giao việc, tạo repo |
-| **Khung chung** | 19–23/11 | Giao diện solver, mã hóa đường đi và đồ thị mẫu chạy được *(Đã hoàn thành sớm ngày 17/11)* |
-| **Code song song** | 24/11–05/12 | GA, WOA, kịch bản, GUI khung xong |
-| **Tích hợp** | 06–08/12 | Merge toàn bộ vào main |
-| **Hoàn thiện chương trình** | 09–13/12 | GUI nối thuật toán, thực nghiệm xong, Turnitin chạy thử |
-| **Báo cáo và slide** | 10–16/12 | Báo cáo ghép, slide xong |
+| **Khung chung** | 19–23/11 | Giao diện solver, mã hóa đường đi, quần thể chung, `cut_proof` và đồ thị mẫu chạy được (TV1 xong 23/11) |
+| **Code song song (cuốn chiếu)** | 24/11–05/12 | TV3 kịch bản (27/11) → TV5 WOA (29/11) → TV2 GA (01/12) → TV3 khung benchmark (03/12) → TV4 khung GUI (05/12) |
+| **Tích hợp** | 06–08/12 | Merge toàn bộ vào main, kiểm thử tích hợp |
+| **Hoàn thiện chương trình** | 09–13/12 | GUI hoàn chỉnh (11/12), thực nghiệm 20–30 seed xong (13/12), Turnitin chạy thử (12/12) |
+| **Báo cáo và slide** | 10–16/12 | Báo cáo ghép theo mẫu 4 chương, slide và bộ câu hỏi vấn đáp xong |
 | **Chốt bản cuối** | 17/12 | Báo cáo kèm Turnitin, code main đóng băng |
 | **Tập dượt** | 18–19/12 | Chạy thử demo và hỏi đáp |
 | **Nộp** | 20/12 | Nộp sản phẩm |
@@ -139,73 +141,73 @@ AI_NHOM8/
 - **Output:** biên bản ngắn (dạng bài toán, phân công, lịch họp), repo có sẵn nhánh cho từng người
 - **Hoàn thành khi:** mỗi người biết rõ việc, hạn và cách nộp của mình
 
-### Bước 1 – Khung chung (19–23/11) *(TV1 đã hoàn thành xuất sắc ngày 17/11)*
+### Bước 1 – Khung chung (19–23/11)
 - **Ai:** TV1
 - **Input:** biên bản Bước 0
 - **Việc làm:**
   - Viết `Graph` (nút, cạnh, capacity, cost, nguồn, đích, lượng luồng yêu cầu), kiểm tra dữ liệu đầu vào.
-  - Viết `evaluate(flows)` (hỗ trợ cả max flow và min cost flow) và hàm kiểm tra tính hợp lệ.
+  - Viết `evaluate(flows)` (hỗ trợ cả max flow và min cost flow), hàm so sánh `is_better` ưu tiên nghiệm khả thi và hàm `cut_proof` kiểm chứng vô nghiệm.
   - Viết `PathEncoding` và `enumerate_paths`: mã hóa nghiệm theo đường đi giúp nghiệm tự động bảo toàn luồng và thỏa mãn sức chứa cạnh (`topup=False` mặc định).
-  - Viết `solver_base.py` với giao diện chuẩn `evaluate_candidate`, `run(max_iter, max_evals)`, `budget_exhausted`, `history`, bộ đếm `eval_count`.
-  - Cài đặt `RandomSolver` (solver giả) kiểm chứng thành công trên đồ thị mẫu S1_small.
+  - Viết `solver_base.py` với giao diện chuẩn `evaluate_candidate`, `generate_initial_population`, `is_better`, `run(max_iter, max_evals)`, `budget_exhausted`, `history`, `history_flows`, bộ đếm `eval_count`.
+  - Cài đặt `RandomSolver` (solver giả) kiểm chứng trên đồ thị mẫu S1_small.
   - Viết tài liệu quy chuẩn giao diện `docs/INTERFACE_SPEC.md` và kế hoạch `docs/PLAN.md` gửi cả nhóm.
 - **Output:** `graph.py`, `fitness.py`, `paths.py`, `solver_base.py`, `dummy_solver.py`, đồ thị mẫu, kiểm thử tự động `test_framework.py` đạt 100%.
 
-### Bước 2a – Cài GA (24/11–05/12)
+### Bước 2a – Cài GA (24/11–01/12)
 - **Ai:** TV2
 - **Input:** `Graph`, `SolverBase`, `PathEncoding`, tài liệu giao diện
 - **Việc làm:**
   - Không gian tìm kiếm: vector $x$ kích thước `self.dim` trong khoảng `[self.lower, self.upper]`.
-  - Khởi tạo quần thể trong $[lower, upper]$.
-  - Chọn lọc (ví dụ tournament), lai ghép (crossover thực/blx-alpha), đột biến (Gaussian/uniform), giữ lại cá thể tốt (elitism).
+  - Khởi tạo quần thể trong $[lower, upper]$ bằng `self.generate_initial_population(pop_size)`.
+  - Chọn lọc tournament 3, lai ghép số học (xác suất 0.9), đột biến đều theo `[lower, upper]` (xác suất $1/\text{dim}$), giữ lại cá thể tốt (elitism) và đếm số lần dùng từng toán tử.
   - Sau đột biến, kẹp nghiệm về biên: `candidate_x = self.encoding.clip(candidate_x)`.
-  - Chấm điểm cá thể BẮT BUỘC qua `ev, flows = self.evaluate_candidate(x)`. Luôn tối đa hóa fitness (`ev.fitness > best_eval.fitness`).
+  - Chấm điểm cá thể BẮT BUỘC qua `ev, flows = self.evaluate_candidate(x)`. Cập nhật nghiệm tốt nhất qua `self.is_better(ev, best_eval)` và lưu `self.history_flows`.
   - Dừng theo ngân sách: `if self.budget_exhausted(max_evals): break`.
   - Thử trên đồ thị mẫu và các kịch bản TV3 giao.
-- **Output:** `ga.py` kế thừa solver chung, trả `Result` kèm `history` và số lần đánh giá, ghi chú tham số mặc định.
+- **Output:** `ga.py` kế thừa solver chung, trả `Result` kèm `history`, `history_flows`, số lần đánh giá và thống kê toán tử.
 - **Hoàn thành khi:** GA cho nghiệm hợp lệ trên mọi kịch bản ở cả hai dạng và tiệm cận đáp án tối ưu.
-- **Hạn:** mốc giữa 29/11 (bản chạy được), bản cuối 05/12.
+- **Hạn:** mốc giữa 28/11 (chạy được trên S1), bản cuối 01/12 (bàn giao cho TV3 và TV4).
 
-### Bước 2b – Cài WOA (24/11–05/12)
+### Bước 2b – Cài WOA (24–29/11)
 - **Ai:** TV5
 - **Input:** `Graph`, `SolverBase`, `PathEncoding`, tài liệu giao diện
 - **Việc làm:**
   - Không gian tìm kiếm: vector cá voi $x$ kích thước `self.dim` trong khoảng `[self.lower, self.upper]`.
-  - Khởi tạo quần thể cá voi trong khoảng $[lower, upper]$.
-  - Cài ba cơ chế cập nhật vị trí: bao vây con mồi, đường xoắn ốc bong bóng, tìm kiếm ngẫu nhiên; hệ số $a$ giảm dần từ 2 về 0.
+  - Khởi tạo quần thể cá voi bằng `self.generate_initial_population(num_whales)`.
+  - Cài ba cơ chế cập nhật vị trí: bao vây con mồi, đường xoắn ốc bong bóng, tìm kiếm ngẫu nhiên; hệ số $a$ giảm tuyến tính từ 2 về đúng 0 ở vòng cuối (`max_iter - 1`), kèm bộ đếm số lần dùng 3 nhánh và kẹp biên.
   - Sau mỗi bước di chuyển, kẹp nghiệm về biên: `candidate_x = self.encoding.clip(candidate_x)`.
-  - Chấm điểm cá thể BẮT BUỘC qua `ev, flows = self.evaluate_candidate(x)`. Luôn tối đa hóa fitness (`ev.fitness > best_eval.fitness`).
+  - Chấm điểm cá thể BẮT BUỘC qua `ev, flows = self.evaluate_candidate(x)`. Cập nhật nghiệm tốt nhất qua `self.is_better(ev, best_eval)` và lưu `self.history_flows`.
   - Dừng theo ngân sách: `if self.budget_exhausted(max_evals): break`.
   - Thử trên đồ thị mẫu và các kịch bản.
-- **Output:** `woa.py` kế thừa solver chung, trả `Result` kèm `history` và số lần đánh giá, ghi chú tham số mặc định.
+- **Output:** `woa.py` kế thừa solver chung, trả `Result` kèm `history`, `history_flows`, số lần đánh giá và thống kê 3 nhánh.
 - **Hoàn thành khi:** WOA cho nghiệm hợp lệ trên mọi kịch bản ở cả hai dạng; giải thích được vì sao mỗi công thức trong code ứng với bước nào của thuật toán.
-- **Hạn:** mốc giữa 29/11, bản cuối 05/12.
+- **Hạn:** 29/11 (bàn giao cho TV3 và TV4).
 
-### Bước 2c – Kịch bản thử nghiệm (24–29/11)
+### Bước 2c – Kịch bản thử nghiệm (24–27/11)
 - **Ai:** TV3
 - **Input:** định dạng `Graph`, dạng bài toán đã chốt
-- **Việc làm:** tạo 5–6 kịch bản khác nhau trong `data/scenarios/`, mỗi kịch bản có thêm chi phí trên cạnh và lượng luồng yêu cầu để chạy được cả max flow và min cost flow:
+- **Việc làm:** tạo bộ kịch bản trong `data/scenarios/`, mỗi kịch bản có thêm chi phí trên cạnh và lượng luồng yêu cầu để chạy được cả max flow và min cost flow:
   - S1: mạng nhỏ (6–8 nút)
   - S2: mạng vừa (15–20 nút)
   - S3: mạng lớn (40–50 nút)
   - S4: có nút thắt cổ chai
-  - S5: nhiều nguồn và nhiều đích
+  - S5: nhiều nguồn và nhiều đích (quy về siêu nguồn $S^*$ và siêu đích $T^*$)
   - S6: kịch bản giao thông có đoạn tắc, mô phỏng bằng cách giảm sức chứa hoặc tăng chi phí của một số cạnh
-  - Với mỗi kịch bản, tính đáp án tối ưu bằng thuật toán đối chứng (max flow: Edmonds-Karp; min cost flow: successive shortest path) làm mốc kiểm tra.
+  - Bổ sung 2 ca đặc biệt: ca vô nghiệm (`required_flow > max_flow` để đối chiếu `cut_proof`) và ca bẫy tham lam cho Max Flow. Kiểm tra giới hạn `max_paths=200` trên S3; tính sẵn đáp án tối ưu vào `known_optimum` bằng Edmonds-Karp và Successive Shortest Path (chỉ làm mốc kiểm tra, không đưa vào bảng so sánh).
 - **Output:** thư mục `data/scenarios/` (JSON), bảng mô tả kịch bản (số nút, cạnh, mục đích, đáp án tối ưu của từng dạng).
-- **Hoàn thành khi:** TV2 và TV5 đọc được mọi kịch bản mà không sửa gì.
-- **Hạn:** 29/11.
+- **Hoàn thành khi:** TV2, TV5 và TV4 đọc được mọi kịch bản mà không sửa gì.
+- **Hạn:** 27/11 (bàn giao sớm nhất trong giai đoạn code song song cho TV2, TV5 và TV4).
 
 ### Bước 2d – Giao diện khung (24/11–05/12)
 - **Ai:** TV4
-- **Input:** tài liệu giao diện solver, `RandomSolver` mẫu
+- **Input:** tài liệu giao diện solver, `RandomSolver` mẫu, kịch bản của TV3, solver của TV5 và TV2
 - **Việc làm:**
-  - Dùng PySide6 (được cộng điểm); nếu chưa kịp làm quen thì chuyển sang CustomTkinter làm phương án dự phòng (chốt trước 29/11).
+  - Dùng PySide6 Widgets (được cộng điểm); nếu chưa kịp làm quen thì chuyển sang CustomTkinter làm phương án dự phòng.
   - Dựng form: nhập hoặc tải mạng, chọn dạng bài toán (max flow hoặc min cost flow), chọn thuật toán, nhập tham số (`max_iter`, `max_evals`, `seed`, ...), nút chạy, vùng hiển thị kết quả.
-  - Chạy thử với `RandomSolver` của TV1.
-- **Output:** `gui/app.py` chạy được với solver mẫu, bản phác giao diện để TV5 đưa vào slide.
+  - Chạy thử với `RandomSolver` của TV1, sau đó nối thử với WOA (29/11) và GA (01/12).
+- **Output:** `gui/app.py` chạy được với các solver, bản phác giao diện để TV5 đưa vào slide.
 - **Hoàn thành khi:** có thể chọn kịch bản, bấm chạy và thấy kết quả hiển thị trên form.
-- **Hạn:** 05/12.
+- **Hạn:** mốc giữa 02/12 (khung form nạp kịch bản TV3 với `RandomSolver`), bản khung nối thử GA/WOA 05/12.
 
 ### Bước 3 – Tích hợp (06–08/12)
 - **Ai:** TV1, có TV2 và TV5 hỗ trợ sửa lỗi
@@ -218,7 +220,7 @@ AI_NHOM8/
 ### Bước 4a – Nối giao diện (09–11/12)
 - **Ai:** TV4
 - **Input:** main đã merge
-- **Việc làm:** nối form với GA và WOA ở cả hai dạng bài toán, vẽ đồ thị luồng trên mạng (dùng `best_flows`), vẽ đường hội tụ (dùng `history`), hiển thị số liệu (giá trị, thời gian, số lần đánh giá), xử lý nhập sai.
+- **Việc làm:** nối form PySide6 Widgets với GA và WOA ở cả hai dạng bài toán (có nút chạy song song 2 thuật toán), vẽ đồ thị luồng trên mạng (dùng `best_flows`, tô màu cạnh bão hòa và nét đứt cạnh đóng), vẽ đường hội tụ (dùng `history`), thêm thanh kéo tua lại từng vòng (dùng `history_flows`), hiển thị số liệu (giá trị, thời gian, số lần đánh giá), xử lý nhập sai và chuẩn bị bản dự phòng offline.
 - **Output:** ứng dụng hoàn chỉnh, kèm hướng dẫn chạy ngắn.
 - **Hoàn thành khi:** người chưa từng dùng chạy được một kịch bản và đọc được kết quả.
 - **Hạn:** 11/12.
@@ -227,13 +229,14 @@ AI_NHOM8/
 - **Ai:** TV3, TV2 và TV5 hỗ trợ chỉnh tham số
 - **Input:** main, các kịch bản
 - **Việc làm:**
-  - Mỗi kịch bản chạy cả hai thuật toán, ở cả hai dạng bài toán, ít nhất 20 lần, cùng ngân sách đánh giá (`max_evals`) và cùng seed.
-  - Ghi: giá trị tốt nhất (tổng luồng hoặc tổng chi phí tùy dạng), trung bình, độ lệch chuẩn, tỷ lệ nghiệm hợp lệ, thời gian chạy, số vòng hội tụ.
+  - Khung `benchmark.py` hoàn thành bản chạy thử với GA và WOA vào ngày 03/12.
+  - Mỗi kịch bản chạy cả hai thuật toán, ở cả hai dạng bài toán, ít nhất 20–30 lần, cùng ngân sách đánh giá (`max_evals`) và cùng seed.
+  - Ghi: giá trị tốt nhất (tổng luồng hoặc tổng chi phí tùy dạng), trung bình, độ lệch chuẩn, tỷ lệ nghiệm hợp lệ, tỷ lệ đạt trong 1% tối ưu, số lần đánh giá chạm ngưỡng 1% lần đầu, tỉ số thắng/thua ghép cặp theo seed, thời gian chạy, số vòng hội tụ.
   - Khảo sát ảnh hưởng của tham số chính (kích thước quần thể, tỷ lệ đột biến của GA, hệ số xoắn ốc của WOA).
   - Rút nhận xét: thuật toán nào thắng ở tình huống nào và vì sao.
 - **Output:** bảng kết quả, biểu đồ hội tụ và so sánh, đoạn nhận xét ngắn cho từng kịch bản.
 - **Hoàn thành khi:** mọi số liệu trong báo cáo tái lập được bằng `benchmark.py`.
-- **Hạn:** 13/12.
+- **Hạn:** khung chạy được 03/12, thực nghiệm chính thức xong 13/12.
 
 ### Bước 5 – Viết phần báo cáo (viết dần, hạn 15/12)
 - **Ai:** mỗi thành viên viết phần mình ở mục 3
@@ -245,7 +248,7 @@ AI_NHOM8/
 ### Bước 6 – Ghép báo cáo (16/12)
 - **Ai:** TV1
 - **Input:** các phần báo cáo trong `report/`
-- **Việc làm:** ghép theo mẫu, thống nhất văn phong, đánh số hình và bảng, viết phần giới thiệu và kết luận, thêm tài liệu tham khảo.
+- **Việc làm:** ghép theo mẫu 4 chương, thống nhất văn phong, đánh số hình và bảng, viết phần giới thiệu và kết luận, thêm tài liệu tham khảo.
 - **Output:** báo cáo hoàn chỉnh trước kiểm tra đạo văn.
 - **Hạn:** 16/12.
 
@@ -260,15 +263,15 @@ AI_NHOM8/
 ### Bước 8 – Slide và demo (13–17/12)
 - **Ai:** TV5, các thành viên góp nội dung phần mình
 - **Input:** báo cáo, kết quả thực nghiệm, ứng dụng
-- **Việc làm:** làm slide cô đọng; chọn kịch bản demo và viết kịch bản ngắn (bấm gì, nói gì, kết quả mong đợi); chuẩn bị bản ghi hình dự phòng khi demo trực tiếp lỗi.
-- **Output:** slide, kịch bản demo, bản ghi hình dự phòng.
+- **Việc làm:** làm slide cô đọng; chọn kịch bản demo và viết kịch bản ngắn (bấm gì, nói gì, kết quả mong đợi); chuẩn bị bản dự phòng khi demo trực tiếp lỗi.
+- **Output:** slide, kịch bản demo, bản dự phòng.
 - **Hạn:** 17/12.
 
 ### Bước 9 – Tập dượt và nộp (18–20/12)
 - **Ai:** cả nhóm
 - **Input:** slide, ứng dụng, báo cáo cuối
-- **Việc làm:** tập thuyết trình một lượt đầy đủ, mỗi người chuẩn bị trả lời 3–5 câu hỏi về phần mình, thống nhất cách trả lời câu hỏi chéo, nộp sản phẩm.
-- **Output:** danh sách câu hỏi và trả lời dự kiến, bộ sản phẩm nộp (code, báo cáo, slide).
+- **Việc làm:** tập thuyết trình một lượt đầy đủ, mỗi người chuẩn bị trả lời câu hỏi về phần mình dựa trên bảng câu hỏi vấn đáp chỉ thẳng tới từng biến/dòng code trong `core/`, thống nhất cách trả lời câu hỏi chéo, nộp sản phẩm.
+- **Output:** bảng câu hỏi vấn đáp theo code, bộ sản phẩm nộp (code, báo cáo 4 chương, slide).
 - **Hạn:** tập dượt 18–19/12, nộp 20/12.
 
 ---
@@ -277,24 +280,34 @@ AI_NHOM8/
 
 | TV | Mốc và hạn |
 |---|---|
-| **TV1** | 18/11 biên bản và repo · 23/11 khung chung *(xong 17/11)* · 08/12 merge xong · 16/12 ghép báo cáo · 17/12 báo cáo cuối |
-| **TV2** | 29/11 GA chạy được · 05/12 GA bản cuối · 10/12 phần lý thuyết và cài đặt GA · 13/12 hỗ trợ chỉnh tham số |
-| **TV3** | 29/11 bộ kịch bản · 12/12 Turnitin chạy thử · 13/12 thực nghiệm xong · 15/12 phần thực nghiệm báo cáo · 17/12 Turnitin bản cuối |
-| **TV4** | 05/12 form khung · 11/12 GUI hoàn chỉnh · 15/12 phần giao diện báo cáo · 17/12 hướng dẫn chạy |
-| **TV5** | 29/11 WOA chạy được · 05/12 WOA bản cuối · 10/12 phần lý thuyết và cài đặt WOA · 17/12 slide và kịch bản demo |
+| **TV1** | 18/11 biên bản & repo · 23/11 khung chung (bàn giao cho cả nhóm) · 08/12 merge xong · 16/12 ghép báo cáo 4 chương · 17/12 báo cáo cuối |
+| **TV2** | 28/11 GA chạy được trên S1 · 01/12 GA bản cuối (bàn giao cho TV3 & TV4) · 10/12 phần báo cáo GA · 13/12 hỗ trợ chỉnh tham số |
+| **TV3** | 27/11 bộ kịch bản JSON (bàn giao cho TV2, TV5, TV4) · 03/12 khung `benchmark.py` chạy với GA & WOA · 12/12 Turnitin chạy thử · 13/12 thực nghiệm xong · 15/12 báo cáo Chương 3 · 17/12 Turnitin bản cuối |
+| **TV4** | 02/12 khung form nạp kịch bản TV3 · 05/12 khung GUI nối thử GA & WOA · 11/12 GUI hoàn chỉnh (có replay) · 15/12 phần Form & Phụ lục HDSD · 17/12 bản dự phòng demo |
+| **TV5** | 29/11 WOA bản cuối (bàn giao cho TV3 & TV4) · 10/12 phần báo cáo WOA · 17/12 slide, kịch bản demo & bảng câu hỏi vấn đáp |
 
 ---
 
-## 7. Cấu trúc báo cáo gợi ý
-*(Đối chiếu với mẫu của giảng viên; nếu mẫu khác thì theo mẫu)*
-1. Giới thiệu và phát biểu bài toán Network flow (TV1)
-2. Cơ sở lý thuyết và cài đặt GA (TV2)
-3. Cơ sở lý thuyết và cài đặt WOA (TV5)
-4. Thiết kế chương trình và giao diện, nêu rõ thư viện PySide6 và lý do chọn (TV4, TV1)
-5. Thực nghiệm và so sánh hiệu năng (TV3)
-6. Kết luận và hướng phát triển (TV1)
-7. Tài liệu tham khảo
-8. Phụ lục: kết quả Turnitin
+## 7. Cấu trúc báo cáo
+
+- **Chương 1. Tổng quan** *(TV1)*
+  - `1.1.` Giới thiệu bài toán Network Flow
+  - `1.2.` Phát biểu bài toán Max Flow & Min Cost Flow kèm ví dụ tính tay S1
+  - `1.3.` Một số hướng tiếp cận giải quyết bài toán
+- **Chương 2. Giải thuật di truyền và WOA** *(TV1, TV2, TV5)*
+  - `2.1.` Giới thiệu lý thuyết GA (TV2) và WOA (TV5)
+  - `2.2.` Ứng dụng GA và WOA cho bài toán Network Flow (mã hóa đường đi, hàm fitness, kiến trúc `SolverBase`, độ phức tạp Big-O, ví dụ tính tay 1 bước lai/cập nhật)
+- **Chương 3. Các kết quả thực nghiệm** *(TV3, TV4)*
+  - `3.1.` Các tình huống thử nghiệm (S1–S6, ca vô nghiệm `cut_proof`, ca bẫy tham lam) và giới thiệu giao diện Form PySide6
+  - `3.2.` Phân tích và đánh giá hiệu năng GA vs WOA (tỷ lệ hợp lệ, tỷ lệ đạt 1%, tốc độ chạm ngưỡng, ghép cặp theo seed, khảo sát tham số)
+- **Chương 4. Kết luận** *(TV1)*
+  - `4.1.` Các kết quả đạt được
+  - `4.2.` Những hạn chế và hướng phát triển
+- **Tài liệu tham khảo** *(Cả nhóm)*
+- **Phụ lục**
+  - Mã nguồn, link GitHub và hướng dẫn sử dụng Form *(TV4, TV1)*
+  - Phân công nhiệm vụ *(TV1)*
+  - Minh chứng kết quả kiểm tra đạo văn Turnitin dưới 30% *(TV3)*
 
 ---
 
@@ -302,7 +315,7 @@ AI_NHOM8/
 
 | Rủi ro | Cách xử lý |
 |---|---|
-| **Khung chung trễ, các nhánh lệch giao diện** | TV1 xong Bước 1 đúng hạn 23/11 *(thực tế đã xong ngày 17/11)*; ai thấy giao diện không đủ dùng thì báo trong buổi họp, không tự sửa |
+| **Khung chung trễ, các nhánh lệch giao diện** | TV1 xong Bước 1 đúng hạn 23/11; ai thấy giao diện không đủ dùng thì báo trong buổi họp, không tự sửa |
 | **Nghiệm ngẫu nhiên vi phạm bảo toàn luồng** | Đã giải quyết triệt để bằng mã hóa theo đường đi `PathEncoding`: nghiệm tự động bảo toàn luồng và thỏa mãn sức chứa cạnh |
 | **So sánh GA và WOA không công bằng** | Dùng chung fitness, cách mã hóa đường đi, seed và ngân sách số lần đánh giá (`max_evals`) |
 | **Dồn việc báo cáo về cuối** | Mỗi người viết phần mình ngay khi code xong (hạn 10/12 cho phần lý thuyết và cài đặt) |

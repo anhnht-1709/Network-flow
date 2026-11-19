@@ -29,11 +29,13 @@ AI_NHOM8/
 > **Giải pháp:** Chuyển sang biểu diễn cá thể $x$ là **lượng luồng chạy trên từng đường đi đơn** từ `source` đến `sink`.
 
 ### 2.1. Các thông số không gian tìm kiếm trong SolverBase:
-Mỗi solver kế thừa `SolverBase` tự động có sẵn các thuộc tính:
+Mỗi solver kế thừa `SolverBase` tự động có sẵn các thuộc tính và phương thức:
 - `self.dim`: Số chiều không gian nghiệm = số lượng đường đi đơn ($num\_paths$).
 - `self.lower`: Mảng 1D float chứa cận dưới = `zeros(self.dim)`.
 - `self.upper`: Mảng 1D float chứa cận trên = nút cổ chai (sức chứa nhỏ nhất trong các cạnh của từng đường đi).
+- Khởi tạo quần thể chung: `self.generate_initial_population(pop_size)` sinh ma trận `(pop_size, self.dim)` từ `self.seed` để các thuật toán xuất phát từ cùng một tập ứng viên ban đầu.
 - Cắt biên nghiệm: `self.encoding.clip(x)` đưa $x$ về đoạn $[\text{lower}, \text{upper}]$.
+- So sánh nghiệm: `self.is_better(ev, best_eval)` ưu tiên nghiệm khả thi (`feasible=True`) trước, sau đó chọn nghiệm có `fitness` lớn hơn.
 
 ### 2.2. Cơ chế Decode và Đánh giá:
 - Solver (GA, WOA) chỉ cần sinh và tối ưu vector $x \in [\text{lower}, \text{upper}]$.
@@ -45,9 +47,12 @@ Mỗi solver kế thừa `SolverBase` tự động có sẵn các thuộc tính:
 ---
 
 ## 3. Hàm đánh giá (Fitness Function) – Quy chuẩn duy nhất
-> **Quy ước bất biến:** Mọi Solver luôn **TỐI ĐA HÓA (MAXIMIZE)** giá trị `fitness`.
+> **Quy ước bất biến:** Mọi Solver luôn **TỐI ĐA HÓA (MAXIMIZE)** giá trị `fitness` và ưu tiên nghiệm hợp lệ (`feasible=True`) qua `self.is_better(ev, best_eval)`.
 
-Hàm đánh giá: `evaluate(flows, graph, mode="max_flow"|"min_cost", penalty=1000.0) -> Evaluation`
+Hàm đánh giá: `evaluate(flows, graph, mode="max_flow"|"min_cost", penalty=None) -> Evaluation`
+- Khi `penalty=None`, hệ số phạt được tính tự động lớn hơn tổng chi phí tối đa có thể của mạng ($\max(1000.0, 10 \times \sum c_e \cdot \text{cost}_e)$).
+- Hàm `cut_proof(graph, required_flow)` tìm lát cắt $s$-$t$ cực tiểu để chứng minh toán học cho các kịch bản vô nghiệm ($\text{required\_flow} > \text{cut\_capacity}$).
+
 Đối tượng trả về `Evaluation`:
 - `fitness: float`: Điểm thích nghi để chọn lọc cá thể (càng cao càng tốt).
 - `total_flow: float`: Tổng luồng tịnh thực tế đi vào nút đích `sink`.
@@ -72,10 +77,16 @@ import numpy as np
 
 class CustomSolver(SolverBase):
     def run(self, max_iter: int, max_evals: int | None = None) -> Result:
-        # 1. Khởi tạo nghiệm ban đầu và lưu history[0]
+        self.eval_count = 0
+        self.history = []
+        self.history_flows = []
+
+        # 1. Khởi tạo quần thể ban đầu dùng chung từ self.seed
+        pop = self.generate_initial_population(pop_size=30)
         best_x = np.zeros(self.dim)
         best_eval, best_flows = self.evaluate_candidate(best_x)
         self.history.append(best_eval.fitness)
+        self.history_flows.append(best_flows.copy())
 
         # 2. Vòng lặp tiến hóa / tối ưu (GA, WOA)
         for gen in range(max_iter):
@@ -83,20 +94,20 @@ class CustomSolver(SolverBase):
                 break
             
             # Sinh cá thể x trong khoảng [self.lower, self.upper]
-            # (qua lai ghép, đột biến GA hoặc di chuyển xoắn ốc WOA)
             candidate_x = self.rng.uniform(self.lower, self.upper, size=self.dim)
             candidate_x = self.encoding.clip(candidate_x)
 
             # Đánh giá cá thể duy nhất qua evaluate_candidate
             ev, flows = self.evaluate_candidate(candidate_x)
 
-            # Cập nhật nghiệm tốt nhất (luôn tối đa hóa fitness)
-            if ev.fitness > best_eval.fitness:
+            # Cập nhật nghiệm tốt nhất (ưu tiên feasible, sau đó tối đa hóa fitness)
+            if self.is_better(ev, best_eval):
                 best_eval = ev
                 best_flows = flows
                 best_x = candidate_x.copy()
 
             self.history.append(best_eval.fitness)
+            self.history_flows.append(best_flows.copy())
 
         return Result(
             best_flows=best_flows,
@@ -107,7 +118,8 @@ class CustomSolver(SolverBase):
             mode=self.mode,
             params=self.params,
             algorithm_name="GA_or_WOA",
-            best_x=best_x
+            best_x=best_x,
+            history_flows=self.history_flows
         )
 ```
 
@@ -117,10 +129,10 @@ class CustomSolver(SolverBase):
 
 ### Thành viên 2 (GA) & Thành viên 5 (WOA) – Giao việc kỹ thuật ngắn:
 Mọi thuật toán (`core/ga.py` và `core/woa.py`) đều kế thừa `SolverBase` và tuân thủ các quy tắc bất biến sau:
-1. **Không gian tìm kiếm:** Làm việc trên vector nghiệm đường đi $x$ có kích thước `self.dim`. Mọi cá thể được sinh và biến đổi trong khoảng `[self.lower, self.upper]`.
+1. **Không gian tìm kiếm & Khởi tạo:** Làm việc trên vector nghiệm đường đi $x$ kích thước `self.dim` trong `[self.lower, self.upper]`. Khởi tạo quần thể ban đầu bằng `self.generate_initial_population(pop_size)`.
 2. **Kẹp biên:** Luôn dùng `candidate_x = self.encoding.clip(candidate_x)` sau khi lai ghép, đột biến hoặc cập nhật vị trí.
 3. **Đánh giá cá thể:** BẮT BUỘC gọi duy nhất `ev, flows = self.evaluate_candidate(x)` trong vòng lặp (hàm tự decode với `topup=False`, chấm điểm và tự động đếm 1 lần đánh giá). Không gọi trực tiếp `_evaluate(flows)`.
-4. **Mục tiêu tối ưu:** Solver luôn **TỐI ĐA HÓA fitness** (nghiệm tốt hơn khi `ev.fitness > best_eval.fitness` ở cả hai dạng `max_flow` và `min_cost`).
+4. **Mục tiêu tối ưu:** Cập nhật nghiệm tốt nhất khi `self.is_better(ev, best_eval)` trả về `True` và lưu `self.history_flows.append(best_flows.copy())` sau mỗi vòng lặp. Ghi thêm bộ đếm số lần thực hiện từng toán tử (`details`) vào `Result.params`.
 5. **Dừng theo ngân sách:** Luôn kiểm tra `if self.budget_exhausted(max_evals): break` ở cả vòng lặp thế hệ lẫn vòng lặp đánh giá cá thể để dừng sớm khi hết ngân sách `max_evals`.
 6. **Code mẫu chuẩn:** Tham khảo cách cài đặt chi tiết trong [`core/dummy_solver.py`](file:///Users/tramanh/Project/AI_NHOM8/core/dummy_solver.py).
 
