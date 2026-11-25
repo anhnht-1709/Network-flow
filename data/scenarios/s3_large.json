@@ -1,0 +1,469 @@
+{
+  "name": "S3_large",
+  "source": "s",
+  "sink": "t",
+  "nodes": ["s", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12",
+    "v13", "v14","v15","v16","v17","v18","v19","v20","v21","v22","v23", "v24","v25", "v26",
+    "v27", "v28","v29","v30","v31","v32", "v33","v34","v35","v36","v37","v38","v39", "v40",
+    "v41","v42", "v43","v44","t"],
+    
+  "edges": [
+    {
+      "u": "s",
+      "v": "v1",
+      "capacity": 15.0,
+      "cost": 2.0
+    },
+    {
+      "u": "s",
+      "v": "v2",
+      "capacity": 12.0,
+      "cost": 3.0
+    },
+    {
+      "u": "s",
+      "v": "v3",
+      "capacity": 10.0,
+      "cost": 4.0
+    },
+    {
+      "u": "s",
+      "v": "v4",
+      "capacity": 8.0,
+      "cost": 6.0
+    },
+    {
+      "u": "s",
+      "v": "v5",
+      "capacity": 14.0,
+      "cost": 5.0
+    },
+    {
+      "u": "v1",
+      "v": "v6",
+      "capacity": 8.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v1",
+      "v": "v7",
+      "capacity": 6.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v2",
+      "v": "v7",
+      "capacity": 7.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v2",
+      "v": "v8",
+      "capacity": 5.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v3",
+      "v": "v8",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v3",
+      "v": "v9",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v4",
+      "v": "v9",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v4",
+      "v": "v10",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v5",
+      "v": "v10",
+      "capacity": 7.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v5",
+      "v": "v11",
+      "capacity": 5.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v6",
+      "v": "v12",
+      "capacity": 6.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v7",
+      "v": "v12",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v7",
+      "v": "v13",
+      "capacity": 5.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v8",
+      "v": "v13",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v8",
+      "v": "v14",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v9",
+      "v": "v14",
+      "capacity": 4.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v9",
+      "v": "v15",
+      "capacity": 3.0,
+      "cost": 3.0
+    },
+    {
+      "u": "v10",
+      "v": "v15",
+      "capacity": 4.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v11",
+      "v": "v16",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v12",
+      "v": "v17",
+      "capacity": 7.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v12",
+      "v": "v18",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v13",
+      "v": "v18",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v13",
+      "v": "v19",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v14",
+      "v": "v19",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v14",
+      "v": "v20",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v15",
+      "v": "v20",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v15",
+      "v": "v21",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v16",
+      "v": "v21",
+      "capacity": 4.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v17",
+      "v": "v22",
+      "capacity": 5.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v18",
+      "v": "v22",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v18",
+      "v": "v23",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v19",
+      "v": "v23",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v19",
+      "v": "v24",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v20",
+      "v": "v24",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v20",
+      "v": "v25",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v21",
+      "v": "v25",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v22",
+      "v": "v26",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v23",
+      "v": "v26",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v23",
+      "v": "v27",
+      "capacity": 3.0,
+      "cost": 3.0
+    },
+    {
+      "u": "v24",
+      "v": "v27",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v24",
+      "v": "v28",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v25",
+      "v": "v28",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v25",
+      "v": "v29",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v26",
+      "v": "v30",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v27",
+      "v": "v30",
+      "capacity": 5.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v27",
+      "v": "v31",
+      "capacity": 3.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v28",
+      "v": "v31",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v28",
+      "v": "v32",
+      "capacity": 3.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v29",
+      "v": "v32",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v30",
+      "v": "v33",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v31",
+      "v": "v33",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v31",
+      "v": "v34",
+      "capacity": 3.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v32",
+      "v": "v34",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v32",
+      "v": "v35",
+      "capacity": 3.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v33",
+      "v": "v36",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v34",
+      "v": "v36",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v34",
+      "v": "v37",
+      "capacity": 3.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v35",
+      "v": "v37",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v36",
+      "v": "v38",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v37",
+      "v": "v38",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v37",
+      "v": "v39",
+      "capacity": 3.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v38",
+      "v": "v40",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v39",
+      "v": "v40",
+      "capacity": 4.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v39",
+      "v": "v41",
+      "capacity": 3.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v40",
+      "v": "v42",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v41",
+      "v": "v42",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v42",
+      "v": "v43",
+      "capacity": 7.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v43",
+      "v": "v44",
+      "capacity": 7.0,
+      "cost": 1.0
+    },
+    {
+      "u": "v44",
+      "v": "t",
+      "capacity": 14.0,
+      "cost": 2.0
+    },
+    {
+      "u": "v43",
+      "v": "t",
+      "capacity": 4.0,
+      "cost": 3.0
+    }
+  ],
+  "required_flow": 6.0,
+  "known_optimum": {
+    "max_flow": 7.0,
+    "min_cost": 116.0,
+    "min_cost_flow_amount": 6.0
+  },
+  "description": "Mạng lớn 46 nút, nhiều tầng và nhiều nhánh. Giới hạn max_paths=200 trong PathEncoding để kiểm soát kích thước không gian nghiệm."
+}

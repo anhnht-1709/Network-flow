@@ -1,0 +1,50 @@
+{
+  "name": "Greedy_trap",
+  "source": "s",
+  "sink": "t",
+  "nodes": [
+    "s",
+    "a",
+    "b",
+    "t"
+  ],
+  "edges": [
+    {
+      "u": "s",
+      "v": "a",
+      "capacity": 100.0,
+      "cost": 1.0
+    },
+    {
+      "u": "a",
+      "v": "b",
+      "capacity": 1.0,
+      "cost": 1.0
+    },
+    {
+      "u": "b",
+      "v": "t",
+      "capacity": 100.0,
+      "cost": 1.0
+    },
+    {
+      "u": "s",
+      "v": "b",
+      "capacity": 100.0,
+      "cost": 1.0
+    },
+    {
+      "u": "a",
+      "v": "t",
+      "capacity": 100.0,
+      "cost": 1.0
+    }
+  ],
+  "required_flow": 150.0,
+  "known_optimum": {
+    "max_flow": 200.0,
+    "min_cost": 300.0,
+    "min_cost_flow_amount": 150.0
+  },
+  "description": "Kịch bản bẫy tham lam: đường s-a-b-t chỉ có bottleneck 1 nhưng có thể được chọn trước. Một heuristic bơm đầy đường theo thứ tự có thể dùng mất 1 đơn vị ở đường dài, trong khi nghiệm tối ưu dùng hai đường s-a-t và s-b-t để đạt Max Flow = 200."
+}
