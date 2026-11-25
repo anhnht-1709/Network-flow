@@ -18,7 +18,7 @@
     {
       "u": "a",
       "v": "b",
-      "capacity": 1.0,
+      "capacity": 100.0,
       "cost": 1.0
     },
     {
@@ -46,5 +46,5 @@
     "min_cost": 300.0,
     "min_cost_flow_amount": 150.0
   },
-  "description": "Kịch bản bẫy tham lam: đường s-a-b-t chỉ có bottleneck 1 nhưng có thể được chọn trước. Một heuristic bơm đầy đường theo thứ tự có thể dùng mất 1 đơn vị ở đường dài, trong khi nghiệm tối ưu dùng hai đường s-a-t và s-b-t để đạt Max Flow = 200."
+  "description": "Kịch bản bẫy tham lam: đường s-a-b-t có bottleneck 100. Nếu heuristic tham lam chọn và bơm đầy đường s-a-b-t trước, 100 đơn vị sẽ làm bão hòa các cạnh s-a và b-t, khiến heuristic bị kẹt ở 100/200 nếu không có cơ chế điều chỉnh hoặc định tuyến lại. Trong khi đó, nghiệm tối ưu cho Max Flow là 200, sử dụng hai đường s-a-t và s-b-t."
 }
