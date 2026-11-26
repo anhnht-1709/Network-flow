@@ -4,11 +4,11 @@
   "sink": "t",
   "nodes": [
     "s",
-    "v1", "v2", "v3", "v4", "v5","v6", "v7", "v8", "v9", "v10",
-    "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20",
-    "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30",
-    "v31", "v32", "v33", "v34", "v35", "v36", "v37", "v38", "v39", "v40",
-    "v41", "v42", "v43", "v44",
+    "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10",
+    "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", 
+    "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", 
+    "v29", "v30", "v31", "v32", "v33", "v34", "v35", "v36", "v37", 
+    "v38", "v39", "v40", "v41", "v42", "v43", "v44",
     "t"
   ],
   "edges": [
@@ -345,5 +345,5 @@
     "min_cost": 24.5,
     "min_cost_flow_amount": 6.0
   },
-  "description": "Mạng lớn 46 nút gồm 8 đường đi chính từ s đến t, hạn chế cạnh nối chéo để kiểm soát số lượng đường đi. Tổng số đường đi là 8, nhỏ hơn max_paths=200. Tổng capacity từ các đường đi bằng 7.0 nên max flow = 7.0. Required flow = 6.0 nên bài toán min cost flow khả thi."
+  "description": "Mạng lớn 46 nút gồm 9 đường đi độc lập từ s đến t, hạn chế cạnh nối chéo để kiểm soát số lượng đường đi. Tổng số đường đi là 9, nhỏ hơn max_paths=200. Tổng capacity của các đường đi bằng 7.0 nên max flow = 7.0. Required flow = 6.0 nên bài toán min cost flow khả thi."
 }
