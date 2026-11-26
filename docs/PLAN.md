@@ -187,7 +187,7 @@ AI_NHOM8/
 - **Ai:** TV3
 - **Input:** định dạng `Graph`, dạng bài toán đã chốt
 - **Việc làm:** tạo bộ kịch bản trong `data/scenarios/`, mỗi kịch bản có thêm chi phí trên cạnh và lượng luồng yêu cầu để chạy được cả max flow và min cost flow:
-  - S1: mạng nhỏ (6–8 nút)
+  - S1: mạng nhỏ (4 nút, dùng kiểm thử cơ sở và ví dụ tính tay)
   - S2: mạng vừa (15–20 nút)
   - S3: mạng lớn (40–50 nút)
   - S4: có nút thắt cổ chai
