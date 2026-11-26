@@ -216,14 +216,15 @@ class GASolver(SolverBase):
             next_evaluations: list[Evaluation] = [evaluations[index] for index in ranked_indices[:elite_count]]
             next_flows: list[np.ndarray] = [flows_population[index].copy() for index in ranked_indices[:elite_count]]
 
+            population_array = np.asarray(evaluated_population, dtype=np.float64)
             fitnesses = np.asarray([ev.fitness for ev in evaluations], dtype=np.float64)
 
             while len(next_population) < self.pop_size and not self.budget_exhausted(max_evals):
                 parent1 = self.select_parent(
-                    np.asarray(evaluated_population), fitnesses, evaluations
+                    population_array, fitnesses, evaluations
                 )
                 parent2 = self.select_parent(
-                    np.asarray(evaluated_population), fitnesses, evaluations
+                    population_array, fitnesses, evaluations
                 )
                 details["selected"] += 2
 
