@@ -5,8 +5,8 @@ Phụ trách: Thành viên 2 (TV2)
 
 Các toán tử sử dụng:
   - Tournament selection: chọn lọc cạnh tranh, mặc định kích thước giải đấu là 3.
-  - Arithmetic crossover: lai ghép số học, mặc định xác suất 0.9.
-  - Uniform mutation: đột biến đều trong miền [lower, upper], mặc định p = 1 / dim.
+  - Extended arithmetic crossover (BLX-alpha): lai ghép số học mở rộng với alpha thuộc [-0.25, 1.25], xác suất 0.9.
+  - Hybrid Gaussian/Uniform mutation: kết hợp đột biến nhiễu Gaussian (tinh chỉnh quanh nghiệm tốt) và đột biến đều trong [lower, upper], mặc định p = 1 / dim.
   - Elitism: giữ lại các cá thể tốt nhất qua thế hệ mới.
 """
 
@@ -41,6 +41,8 @@ class GASolver(SolverBase):
         # Theo đặc tả nhóm: xác suất đột biến mặc định bằng 1 / số chiều.
         default_mutation_rate = 1.0 / max(1, self.dim)
         self.mutation_rate = float(self.params.get("mutation_rate", default_mutation_rate))
+        self.blend_alpha = float(self.params.get("blend_alpha", 0.25))
+        self.mutation_sigma = float(self.params.get("mutation_sigma", 0.15))
 
         if self.pop_size < 1:
             raise ValueError("pop_size phải lớn hơn hoặc bằng 1.")
@@ -52,6 +54,10 @@ class GASolver(SolverBase):
             raise ValueError("crossover_rate phải nằm trong [0, 1].")
         if not 0.0 <= self.mutation_rate <= 1.0:
             raise ValueError("mutation_rate phải nằm trong [0, 1].")
+        if self.blend_alpha < 0.0:
+            raise ValueError("blend_alpha không được âm.")
+        if self.mutation_sigma < 0.0:
+            raise ValueError("mutation_sigma không được âm.")
 
     def initialize_population(self) -> np.ndarray:
         """Tạo quần thể ban đầu dùng chung seed với WOA."""
@@ -104,7 +110,10 @@ class GASolver(SolverBase):
 
         crossover_applied = self.rng.random() < self.crossover_rate
         if crossover_applied:
-            alpha = self.rng.random(self.dim)
+            # Lai số học mở rộng (BLX-alpha) giúp cá thể con chạm được biên 0 và upper sau khi clip
+            alpha = self.rng.uniform(
+                -self.blend_alpha, 1.0 + self.blend_alpha, size=self.dim
+            )
             child1 = alpha * parent1 + (1.0 - alpha) * parent2
             child2 = alpha * parent2 + (1.0 - alpha) * parent1
         else:
@@ -123,7 +132,7 @@ class GASolver(SolverBase):
         return child1, child2
 
     def mutate(self, individual: np.ndarray) -> np.ndarray:
-        """Đột biến đều: mỗi gene được chọn với xác suất mutation_rate."""
+        """Đột biến kết hợp nhiễu cục bộ Gaussian (85%) và tái tạo đều (15%) trên từng gene được chọn."""
         mutated = np.asarray(individual, dtype=np.float64).copy()
         if mutated.shape != (self.dim,):
             raise ValueError(f"Cá thể phải có kích thước ({self.dim},).")
@@ -133,12 +142,17 @@ class GASolver(SolverBase):
         mutation_mask = self.rng.random(self.dim) < self.mutation_rate
         number_mutated = int(np.count_nonzero(mutation_mask))
         if number_mutated:
-            random_values = self.rng.uniform(
-                self.lower[mutation_mask],
-                self.upper[mutation_mask],
-                size=number_mutated
-            )
-            mutated[mutation_mask] = random_values
+            if self.rng.random() < 0.85:
+                span = self.upper[mutation_mask] - self.lower[mutation_mask]
+                noise = self.rng.normal(0.0, self.mutation_sigma * span, size=number_mutated)
+                mutated[mutation_mask] += noise
+            else:
+                random_values = self.rng.uniform(
+                    self.lower[mutation_mask],
+                    self.upper[mutation_mask],
+                    size=number_mutated
+                )
+                mutated[mutation_mask] = random_values
         return self.encoding.clip(mutated)
 
     @staticmethod
@@ -271,6 +285,8 @@ class GASolver(SolverBase):
                 "pop_size": self.pop_size,
                 "crossover_rate": self.crossover_rate,
                 "mutation_rate": self.mutation_rate,
+                "blend_alpha": self.blend_alpha,
+                "mutation_sigma": self.mutation_sigma,
                 "tournament_size": self.tournament_size,
                 "elitism_count": self.elitism_count,
                 "details": details,

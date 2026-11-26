@@ -15,13 +15,13 @@
     {
       "u": "s",
       "v": "v1",
-      "capacity": 1.0,
+      "capacity": 2.0,
       "cost": 1.0
     },
     {
       "u": "v1",
       "v": "v2",
-      "capacity": 1.0,
+      "capacity": 2.0,
       "cost": 0.0
     },
     {
@@ -58,7 +58,7 @@
     {
       "u": "v6",
       "v": "v7",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 0.0
     },
     {
@@ -70,19 +70,19 @@
     {
       "u": "v8",
       "v": "v9",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 0.0
     },
     {
       "u": "v9",
       "v": "v10",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 0.0
     },
     {
       "u": "v10",
       "v": "t",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 2.0
     },
 
@@ -113,26 +113,26 @@
     {
       "u": "v14",
       "v": "v15",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 0.0
     },
     {
       "u": "v15",
       "v": "t",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 2.0
     },
 
     {
       "u": "s",
       "v": "v16",
-      "capacity": 1.0,
+      "capacity": 2.0,
       "cost": 2.0
     },
     {
       "u": "v16",
       "v": "v17",
-      "capacity": 1.0,
+      "capacity": 2.0,
       "cost": 0.0
     },
     {
@@ -187,13 +187,13 @@
     {
       "u": "v24",
       "v": "v25",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 0.0
     },
     {
       "u": "v25",
       "v": "t",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 3.0
     },
 
@@ -224,26 +224,26 @@
     {
       "u": "v29",
       "v": "v30",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 0.0
     },
     {
       "u": "v30",
       "v": "t",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 5.0
     },
 
     {
       "u": "s",
       "v": "v31",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 5.0
     },
     {
       "u": "v31",
       "v": "v32",
-      "capacity": 1.0,
+      "capacity": 1.5,
       "cost": 0.0
     },
     {
@@ -298,13 +298,13 @@
     {
       "u": "v39",
       "v": "v40",
-      "capacity": 0.5,
+      "capacity": 1.5,
       "cost": 0.0
     },
     {
       "u": "v40",
       "v": "t",
-      "capacity": 0.5,
+      "capacity": 1.5,
       "cost": 0.0
     },
 
@@ -337,13 +337,32 @@
       "v": "t",
       "capacity": 0.5,
       "cost": 4.0
-    }
+    },
+
+    { "u": "v2", "v": "v8", "capacity": 1.0, "cost": 0.5 },
+    { "u": "v7", "v": "v3", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v8", "v": "v14", "capacity": 1.0, "cost": 0.5 },
+    { "u": "v12", "v": "v8", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v4", "v": "v10", "capacity": 0.5, "cost": 1.0 },
+    { "u": "v13", "v": "v19", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v18", "v": "v14", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v17", "v": "v23", "capacity": 1.0, "cost": 0.5 },
+    { "u": "v22", "v": "v18", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v23", "v": "v29", "capacity": 1.0, "cost": 0.5 },
+    { "u": "v27", "v": "v23", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v19", "v": "v25", "capacity": 0.5, "cost": 1.0 },
+    { "u": "v28", "v": "v34", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v33", "v": "v29", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v32", "v": "v38", "capacity": 1.0, "cost": 0.5 },
+    { "u": "v38", "v": "v43", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v42", "v": "v39", "capacity": 0.5, "cost": 0.5 },
+    { "u": "v34", "v": "v40", "capacity": 0.5, "cost": 0.5 }
   ],
-  "required_flow": 6.0,
+  "required_flow": 8.0,
   "known_optimum": {
-    "max_flow": 8.0,
-    "min_cost": 24.5,
-    "min_cost_flow_amount": 6.0
+    "max_flow": 10.5,
+    "min_cost": 32.75,
+    "min_cost_flow_amount": 8.0
   },
-  "description": "Mạng lớn 46 nút gồm 9 đường đi độc lập từ s đến t, hạn chế cạnh nối chéo để kiểm soát số lượng đường đi. Tổng số đường đi là 9, nhỏ hơn max_paths=200. Tổng capacity của các đường đi bằng 8.0 nên max flow = 8.0. Required flow = 6.0 nên bài toán min cost flow khả thi."
+  "description": "Mạng lớn 46 nút, 71 cạnh gồm 9 hành lang chính có các cầu nối chéo phân tầng để san tải qua cạnh chung. Tổng số đường đi đơn là 37 (nhỏ hơn giới hạn max_paths=200). Max flow = 10.5; với required_flow = 8.0, chi phí tối ưu đạt min_cost = 32.75."
 }
