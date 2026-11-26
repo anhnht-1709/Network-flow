@@ -341,9 +341,9 @@
   ],
   "required_flow": 6.0,
   "known_optimum": {
-    "max_flow": 7.0,
+    "max_flow": 8.0,
     "min_cost": 24.5,
     "min_cost_flow_amount": 6.0
   },
-  "description": "Mạng lớn 46 nút gồm 9 đường đi độc lập từ s đến t, hạn chế cạnh nối chéo để kiểm soát số lượng đường đi. Tổng số đường đi là 9, nhỏ hơn max_paths=200. Tổng capacity của các đường đi bằng 7.0 nên max flow = 7.0. Required flow = 6.0 nên bài toán min cost flow khả thi."
+  "description": "Mạng lớn 46 nút gồm 9 đường đi độc lập từ s đến t, hạn chế cạnh nối chéo để kiểm soát số lượng đường đi. Tổng số đường đi là 9, nhỏ hơn max_paths=200. Tổng capacity của các đường đi bằng 8.0 nên max flow = 8.0. Required flow = 6.0 nên bài toán min cost flow khả thi."
 }
