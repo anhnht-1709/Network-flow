@@ -1,0 +1,50 @@
+{
+  "name": "Greedy_trap",
+  "source": "s",
+  "sink": "t",
+  "nodes": [
+    "s",
+    "a",
+    "b",
+    "t"
+  ],
+  "edges": [
+    {
+      "u": "s",
+      "v": "a",
+      "capacity": 100.0,
+      "cost": 1.0
+    },
+    {
+      "u": "a",
+      "v": "b",
+      "capacity": 100.0,
+      "cost": 1.0
+    },
+    {
+      "u": "b",
+      "v": "t",
+      "capacity": 100.0,
+      "cost": 1.0
+    },
+    {
+      "u": "s",
+      "v": "b",
+      "capacity": 100.0,
+      "cost": 1.0
+    },
+    {
+      "u": "a",
+      "v": "t",
+      "capacity": 100.0,
+      "cost": 1.0
+    }
+  ],
+  "required_flow": 150.0,
+  "known_optimum": {
+    "max_flow": 200.0,
+    "min_cost": 300.0,
+    "min_cost_flow_amount": 150.0
+  },
+  "description": "Kịch bản bẫy tham lam: đường s-a-b-t có bottleneck 100. Nếu heuristic tham lam chọn và bơm đầy đường s-a-b-t trước, 100 đơn vị sẽ làm bão hòa các cạnh s-a và b-t, khiến heuristic bị kẹt ở 100/200 nếu không có cơ chế điều chỉnh hoặc định tuyến lại. Trong khi đó, nghiệm tối ưu cho Max Flow là 200, sử dụng hai đường s-a-t và s-b-t."
+}

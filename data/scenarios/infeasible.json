@@ -1,0 +1,42 @@
+{
+  "name": "Infeasible_required_flow",
+  "source": "s",
+  "sink": "t",
+  "nodes": [
+    "s",
+    "a",
+    "b",
+    "t"
+  ],
+  "edges": [
+    {
+      "u": "s",
+      "v": "a",
+      "capacity": 4.0,
+      "cost": 1.0
+    },
+    {
+      "u": "s",
+      "v": "b",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "a",
+      "v": "t",
+      "capacity": 4.0,
+      "cost": 1.0
+    },
+    {
+      "u": "b",
+      "v": "t",
+      "capacity": 3.0,
+      "cost": 1.0
+    }
+  ],
+  "required_flow": 10.0,
+  "known_optimum": {
+    "max_flow": 7.0
+  },
+  "description": "Kịch bản vô nghiệm: required_flow = 10 nhưng max flow chỉ bằng 7. Dùng để kiểm tra cut_proof và shortfall."
+}

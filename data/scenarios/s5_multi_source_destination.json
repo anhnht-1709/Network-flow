@@ -1,0 +1,114 @@
+{
+  "name": "S5_multi_source_destination",
+  "source": "SS",
+  "sink": "TT",
+  "nodes": ["SS","s1","s2", "a","b","c","d","t1","t2","TT"],
+  
+  "edges": [
+    {
+      "u": "SS",
+      "v": "s1",
+      "capacity": 8.0,
+      "cost": 0.0
+    },
+    {
+      "u": "SS",
+      "v": "s2",
+      "capacity": 7.0,
+      "cost": 0.0
+    },
+    {
+      "u": "s1",
+      "v": "a",
+      "capacity": 6.0,
+      "cost": 1.0
+    },
+    {
+      "u": "s1",
+      "v": "b",
+      "capacity": 4.0,
+      "cost": 3.0
+    },
+    {
+      "u": "s2",
+      "v": "b",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "s2",
+      "v": "c",
+      "capacity": 5.0,
+      "cost": 2.0
+    },
+    {
+      "u": "a",
+      "v": "d",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "a",
+      "v": "t1",
+      "capacity": 2.0,
+      "cost": 2.0
+    },
+    {
+      "u": "b",
+      "v": "d",
+      "capacity": 6.0,
+      "cost": 2.0
+    },
+    {
+      "u": "b",
+      "v": "t2",
+      "capacity": 3.0,
+      "cost": 1.0
+    },
+    {
+      "u": "c",
+      "v": "t2",
+      "capacity": 4.0,
+      "cost": 1.0
+    },
+    {
+      "u": "d",
+      "v": "t1",
+      "capacity": 5.0,
+      "cost": 1.0
+    },
+    {
+      "u": "d",
+      "v": "t2",
+      "capacity": 3.0,
+      "cost": 2.0
+    },
+    {
+      "u": "t1",
+      "v": "TT",
+      "capacity": 6.0,
+      "cost": 0.0
+    },
+    {
+      "u": "t2",
+      "v": "TT",
+      "capacity": 7.0,
+      "cost": 0.0
+    }
+  ],
+  "required_flow": 12.0,
+  "known_optimum": {
+    "max_flow": 13.0,
+    "min_cost": 33.0,
+    "min_cost_flow_amount": 12.0
+  },
+  "original_sources": [
+    "s1",
+    "s2"
+  ],
+  "original_destinations": [
+    "t1",
+    "t2"
+  ],
+  "description": "Mô phỏng nhiều nguồn và nhiều đích bằng siêu nguồn SS và siêu đích TT để giữ tương thích với PathEncoding source -> sink hiện tại."
+}
