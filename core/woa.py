@@ -21,7 +21,7 @@ import numpy as np
 
 from core.graph import Graph
 from core.fitness import Evaluation
-from core.solver_base import SolverBase, Result
+from core.solver_base import SolverBase, Result, DEFAULT_POP_SIZE
 
 
 class WOASolver(SolverBase):
@@ -38,7 +38,9 @@ class WOASolver(SolverBase):
     ):
         super().__init__(graph, mode=mode, params=params, seed=seed)
         # Hỗ trợ cả 2 tên tham số: num_whales (đặc thù WOA) và pop_size (dùng chung cho form GUI & GA)
-        self.num_whales = self.params.get("num_whales", self.params.get("pop_size", 30))
+        self.num_whales = int(self.params.get("num_whales", self.params.get("pop_size", DEFAULT_POP_SIZE)))
+        if self.num_whales < 1:
+            raise ValueError("num_whales/pop_size phải lớn hơn hoặc bằng 1.")
         self.b = self.params.get("b", 1.0)  # Hằng số định hình đường xoắn ốc logarithmic
 
     def initialize_whales(self) -> np.ndarray:
@@ -58,9 +60,7 @@ class WOASolver(SolverBase):
         Chạy thuật toán WOA qua max_iter vòng lặp hoặc dừng sớm khi hết ngân sách max_evals.
         """
         start_time = time.perf_counter()
-        self.eval_count = 0
-        self.history = []
-        self.history_flows = []
+        self.reset_tracking()
 
         # Khởi tạo bộ đếm số lần dùng 3 nhánh và kẹp biên
         details = {"encircle": 0, "explore": 0, "spiral": 0, "clipped": 0}
@@ -98,8 +98,7 @@ class WOASolver(SolverBase):
                 feasible=False
             )
 
-        self.history.append(best_eval.fitness)
-        self.history_flows.append(best_flows.copy())
+        self.record_progress(best_eval, best_flows)
 
         # 3. Vòng lặp tối ưu hóa chính
         for t in range(max_iter):
@@ -157,9 +156,8 @@ class WOASolver(SolverBase):
                     best_flows = flows
                     best_x = new_whale.copy()
 
-            # Cuối mỗi vòng lặp t: lưu fitness và luồng tốt nhất
-            self.history.append(best_eval.fitness)
-            self.history_flows.append(best_flows.copy())
+            # Cuối mỗi vòng lặp t: lưu fitness, luồng tốt nhất và số lượt đánh giá đã dùng
+            self.record_progress(best_eval, best_flows)
 
         elapsed_s = time.perf_counter() - start_time
 
@@ -179,5 +177,6 @@ class WOASolver(SolverBase):
             },
             algorithm_name="WOA",
             best_x=best_x,
-            history_flows=self.history_flows
+            history_flows=self.history_flows,
+            history_evals=self.history_evals
         )

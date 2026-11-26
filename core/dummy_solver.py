@@ -38,9 +38,7 @@ class RandomSolver(SolverBase):
         Chạy tìm kiếm ngẫu nhiên với số thế hệ tối đa max_iter hoặc ngân sách max_evals.
         """
         start_time = time.perf_counter()
-        self.eval_count = 0
-        self.history = []
-        self.history_flows = []
+        self.reset_tracking()
 
         # =========================================================================
         # CÁC DÒNG GA VÀ WOA SẼ CẦN DÙNG TƯƠNG TỰ:
@@ -55,8 +53,7 @@ class RandomSolver(SolverBase):
         # 1. Khởi tạo nghiệm ban đầu: vector 0 (chưa bơm luồng)
         best_x = np.zeros(dim, dtype=np.float64)
         best_eval, best_flows = self.evaluate_candidate(best_x)
-        self.history.append(best_eval.fitness)
-        self.history_flows.append(best_flows.copy())
+        self.record_progress(best_eval, best_flows)
 
         # 2. Vòng lặp tìm kiếm
         for _ in range(max_iter):
@@ -91,9 +88,8 @@ class RandomSolver(SolverBase):
                     best_flows = flows
                     best_x = candidate_x.copy()
 
-            # Lưu lại fitness và luồng tốt nhất ở cuối vòng lặp
-            self.history.append(best_eval.fitness)
-            self.history_flows.append(best_flows.copy())
+            # Lưu lại fitness, luồng tốt nhất và số lượt đánh giá ở cuối vòng lặp
+            self.record_progress(best_eval, best_flows)
 
         elapsed_s = time.perf_counter() - start_time
 
@@ -107,5 +103,6 @@ class RandomSolver(SolverBase):
             params=self.params,
             algorithm_name="RandomSearch (Dummy)",
             best_x=best_x,
-            history_flows=self.history_flows
+            history_flows=self.history_flows,
+            history_evals=self.history_evals
         )

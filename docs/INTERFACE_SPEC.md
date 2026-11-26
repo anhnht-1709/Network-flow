@@ -34,6 +34,8 @@ Mỗi solver kế thừa `SolverBase` tự động có sẵn các thuộc tính 
 - `self.lower`: Mảng 1D float chứa cận dưới = `zeros(self.dim)`.
 - `self.upper`: Mảng 1D float chứa cận trên = nút cổ chai (sức chứa nhỏ nhất trong các cạnh của từng đường đi).
 - Khởi tạo quần thể chung: `self.generate_initial_population(pop_size)` sinh ma trận `(pop_size, self.dim)` từ `self.seed` để các thuật toán xuất phát từ cùng một tập ứng viên ban đầu.
+- Kích thước quần thể mặc định dùng chung: hằng `DEFAULT_POP_SIZE = 30` trong `core/solver_base.py` (GA và WOA đều đọc `params["pop_size"]`, mặc định 30).
+- Ghi tiến trình: `self.reset_tracking()` ở đầu `run()` và `self.record_progress(best_eval, best_flows)` cuối mỗi vòng lặp (tự lưu `history`, `history_flows`, `history_evals`).
 - Cắt biên nghiệm: `self.encoding.clip(x)` đưa $x$ về đoạn $[\text{lower}, \text{upper}]$.
 - So sánh nghiệm: `self.is_better(ev, best_eval)` ưu tiên nghiệm khả thi (`feasible=True`) trước, sau đó chọn nghiệm có `fitness` lớn hơn.
 
@@ -77,16 +79,13 @@ import numpy as np
 
 class CustomSolver(SolverBase):
     def run(self, max_iter: int, max_evals: int | None = None) -> Result:
-        self.eval_count = 0
-        self.history = []
-        self.history_flows = []
+        self.reset_tracking()
 
         # 1. Khởi tạo quần thể ban đầu dùng chung từ self.seed
         pop = self.generate_initial_population(pop_size=30)
         best_x = np.zeros(self.dim)
         best_eval, best_flows = self.evaluate_candidate(best_x)
-        self.history.append(best_eval.fitness)
-        self.history_flows.append(best_flows.copy())
+        self.record_progress(best_eval, best_flows)
 
         # 2. Vòng lặp tiến hóa / tối ưu (GA, WOA)
         for gen in range(max_iter):
@@ -106,8 +105,7 @@ class CustomSolver(SolverBase):
                 best_flows = flows
                 best_x = candidate_x.copy()
 
-            self.history.append(best_eval.fitness)
-            self.history_flows.append(best_flows.copy())
+            self.record_progress(best_eval, best_flows)
 
         return Result(
             best_flows=best_flows,
@@ -119,7 +117,8 @@ class CustomSolver(SolverBase):
             params=self.params,
             algorithm_name="GA_or_WOA",
             best_x=best_x,
-            history_flows=self.history_flows
+            history_flows=self.history_flows,
+            history_evals=self.history_evals
         )
 ```
 
@@ -139,7 +138,8 @@ Mọi thuật toán (`core/ga.py` và `core/woa.py`) đều kế thừa `SolverB
 ### Thành viên 3 (Dữ liệu & Thực nghiệm - `experiments/benchmark.py`):
 - Nạp đồ thị bằng `Graph.from_json("data/scenarios/...")`.
 - Khởi tạo solver cùng `seed`, gọi `res = solver.run(max_iter, max_evals=...)`.
-- Lấy `res.history` để vẽ biểu đồ đường hội tụ.
+- Lấy `res.history` để vẽ biểu đồ đường hội tụ, **trục hoành dùng `res.history_evals`** (số lượt đánh giá), KHÔNG dùng số vòng lặp vì mỗi vòng GA và WOA tốn số lượt đánh giá khác nhau.
+- Luôn truyền cùng `params={"pop_size": ...}` và cùng `max_evals` cho cả GA và WOA.
 - So sánh hiệu năng dựa trên: `res.best_eval.total_flow` (với max flow), `res.best_eval.total_cost` (với min cost), `res.evaluations`, `res.elapsed_s`, và tỷ lệ nghiệm `res.best_eval.feasible`.
 
 ### Thành viên 4 (Giao diện Form GUI - `gui/app.py`):

@@ -19,7 +19,7 @@ import numpy as np
 
 from core.graph import Graph
 from core.fitness import Evaluation
-from core.solver_base import SolverBase, Result
+from core.solver_base import SolverBase, Result, DEFAULT_POP_SIZE
 
 
 class GASolver(SolverBase):
@@ -33,7 +33,7 @@ class GASolver(SolverBase):
         seed: int = 42
     ):
         super().__init__(graph, mode=mode, params=params, seed=seed)
-        self.pop_size = int(self.params.get("pop_size", 50))
+        self.pop_size = int(self.params.get("pop_size", DEFAULT_POP_SIZE))
         self.crossover_rate = float(self.params.get("crossover_rate", 0.9))
         self.tournament_size = int(self.params.get("tournament_size", 3))
         self.elitism_count = int(self.params.get("elitism_count", 2))
@@ -160,9 +160,7 @@ class GASolver(SolverBase):
             raise ValueError("max_evals không được âm.")
 
         start_time = time.perf_counter()
-        self.eval_count = 0
-        self.history = []
-        self.history_flows = []
+        self.reset_tracking()
         details = {"selected": 0, "crossovers": 0, "mutations": 0, "mutated_genes": 0}
 
         best_x: np.ndarray | None = None
@@ -196,8 +194,7 @@ class GASolver(SolverBase):
             best_flows = np.zeros(self.graph.num_edges, dtype=np.float64)
             best_x = np.zeros(self.dim, dtype=np.float64)
 
-        self.history.append(best_eval.fitness)
-        self.history_flows.append(best_flows.copy())
+        self.record_progress(best_eval, best_flows)
 
         # 2. Tiến hóa qua từng thế hệ.
         for _generation in range(max_iter):
@@ -259,8 +256,7 @@ class GASolver(SolverBase):
             evaluations = next_evaluations
             flows_population = next_flows
 
-            self.history.append(best_eval.fitness)
-            self.history_flows.append(best_flows.copy())
+            self.record_progress(best_eval, best_flows)
 
         elapsed_s = time.perf_counter() - start_time
         return Result(
@@ -281,5 +277,6 @@ class GASolver(SolverBase):
             },
             algorithm_name="GA",
             best_x=best_x,
-            history_flows=self.history_flows
+            history_flows=self.history_flows,
+            history_evals=self.history_evals
         )

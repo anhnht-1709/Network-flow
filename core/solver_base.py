@@ -15,6 +15,10 @@ from core.graph import Graph
 from core.fitness import Evaluation, evaluate, is_better
 from core.paths import PathEncoding
 
+# Kích thước quần thể mặc định DÙNG CHUNG cho GA và WOA để so sánh công bằng
+# (cùng số lượt đánh giá mỗi vòng khi không truyền pop_size).
+DEFAULT_POP_SIZE = 30
+
 
 @dataclass
 class Result:
@@ -29,6 +33,9 @@ class Result:
     algorithm_name: str = "Solver"
     best_x: np.ndarray | None = None
     history_flows: list[np.ndarray] = field(default_factory=list)
+    # Số lượt đánh giá đã dùng tại mỗi điểm của history (cùng độ dài history).
+    # Dùng làm trục hoành khi vẽ hội tụ để so sánh GA/WOA theo cùng ngân sách.
+    history_evals: list[int] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Chuyển kết quả thành dictionary để tiện lưu trữ JSON hoặc xuất biểu đồ."""
@@ -46,6 +53,7 @@ class Result:
             "best_x": self.best_x.tolist() if self.best_x is not None else None,
             "history_length": len(self.history),
             "history_flows_length": len(self.history_flows),
+            "history_evals": list(self.history_evals),
             "params": self.params
         }
 
@@ -78,12 +86,29 @@ class SolverBase(ABC):
         self.eval_count = 0
         self.history: list[float] = []
         self.history_flows: list[np.ndarray] = []
+        self.history_evals: list[int] = []
 
         # Tích hợp mã hóa nghiệm theo đường đi (Path-based encoding)
         self.encoding = PathEncoding(graph, max_paths=self.params.get("max_paths", 200))
         self.dim = self.encoding.num_paths
         self.lower = self.encoding.lower
         self.upper = self.encoding.upper
+
+    def reset_tracking(self) -> None:
+        """Đặt lại bộ đếm đánh giá và lịch sử ở đầu mỗi lần run()."""
+        self.eval_count = 0
+        self.history = []
+        self.history_flows = []
+        self.history_evals = []
+
+    def record_progress(self, best_eval: Evaluation, best_flows: np.ndarray) -> None:
+        """
+        Ghi tiến trình cuối mỗi vòng lặp: fitness tốt nhất, luồng tốt nhất và
+        số lượt đánh giá đã dùng. Ba danh sách luôn có cùng độ dài.
+        """
+        self.history.append(best_eval.fitness)
+        self.history_flows.append(best_flows.copy())
+        self.history_evals.append(self.eval_count)
 
     def generate_initial_population(self, pop_size: int) -> np.ndarray:
         """
